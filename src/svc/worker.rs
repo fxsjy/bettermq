@@ -1,21 +1,21 @@
+use super::utils;
+use std::cmp::Reverse;
+use std::collections::BTreeMap;
+use std::collections::BinaryHeap;
 use std::collections::HashSet;
 use std::collections::LinkedList;
-use std::collections::BinaryHeap;
-use std::collections::BTreeMap;
-use std::cmp::Reverse;
+use std::ops::Bound::{Excluded, Included};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
 use tokio::{task, time};
-use std::ops::Bound::{Included, Excluded};
-use super::utils;
 use tracing::info;
 
 #[derive(Debug, Eq, Ord, PartialEq, PartialOrd, Default)]
 pub struct TaskItem {
-	pub priority : i32,
-	pub timestamp: u64,
-	pub message_id: Vec<u8>,
+    pub priority: i32,
+    pub timestamp: u64,
+    pub message_id: Vec<u8>,
 }
 
 impl TaskItem {
@@ -30,7 +30,7 @@ impl TaskItem {
 
 #[derive(Default)]
 pub struct Worker {
-    tasks: Arc<Mutex<TodoTasks>>
+    tasks: Arc<Mutex<TodoTasks>>,
 }
 
 #[derive(Default)]
@@ -73,35 +73,38 @@ impl Worker {
         Ok(())
     }
 
-    pub fn add_task(&self, item :TaskItem) -> () {
+    pub fn add_task(&self, item: TaskItem) -> () {
         let now = utils::timestamp();
-        let mut tasks = self.tasks.lock().unwrap();   
+        let mut tasks = self.tasks.lock().unwrap();
         if item.timestamp <= now {
             tasks.ready_queue.push(Reverse(item));
         } else {
             {
                 tasks.in_wheel.insert(item.message_id.clone());
             }
-            let ls = tasks.time_wheel.entry(item.timestamp).or_insert(LinkedList::<TaskItem>::new());
+            let ls = tasks
+                .time_wheel
+                .entry(item.timestamp)
+                .or_insert(LinkedList::<TaskItem>::new());
             ls.push_back(item);
         }
     }
 
-    pub fn fetch_tasks(&self, count :u32) -> Vec<TaskItem> {
+    pub fn fetch_tasks(&self, count: u32) -> Vec<TaskItem> {
         let mut tasks = self.tasks.lock().unwrap();
         let mut items = Vec::<TaskItem>::with_capacity(100);
         for _i in 0..count {
-            match  tasks.ready_queue.pop() {
-                Some(Reverse(top)) =>  {
+            match tasks.ready_queue.pop() {
+                Some(Reverse(top)) => {
                     items.push(top);
-                },
-                None => {break}
+                }
+                None => break,
             }
         }
         items
     }
 
-    pub fn cancel_task(&self, message_id:&Vec<u8>) -> bool {
+    pub fn cancel_task(&self, message_id: &Vec<u8>) -> bool {
         let mut tasks = self.tasks.lock().unwrap();
         if !tasks.in_wheel.contains(message_id) {
             false

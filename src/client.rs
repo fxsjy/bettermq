@@ -1,5 +1,5 @@
 use bettermq::priority_queue_client::PriorityQueueClient;
-use bettermq::{EnqueueRequest,DequeueRequest,AckRequest};
+use bettermq::{AckRequest, DequeueRequest, EnqueueRequest};
 
 pub mod bettermq {
     tonic::include_proto!("bettermq");
@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         payload: String::from("xxxxxxx").as_bytes().to_vec(),
         meta: String::from("helloworld"),
         priority: 12,
-        deliver_after:10,
+        deliver_after: 10,
     });
 
     let response = client.enqueue(request).await?;
@@ -28,12 +28,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response = client.dequeue(request).await?;
     for item in response.get_ref().items.iter() {
         println!("dequeue RESPONSE={:?}", item);
-        let request = tonic::Request::new(
-            AckRequest {
-                message_id: item.message_id.clone(),
-                topic: "root".into(),
-            }
-        );
+        let request = tonic::Request::new(AckRequest {
+            message_id: item.message_id.clone(),
+            topic: "root".into(),
+        });
         let response = client.ack(request).await?;
         println!("ACK RESPONSE={:?}", response);
     }
