@@ -1,0 +1,7 @@
+node_id: 123
+listen_grpc: 127.0.0.1:8404
+data_dir: /tmp/demo_queue
+log_level: info
+topics:
+  - root
+  - stock

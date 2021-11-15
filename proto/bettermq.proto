@@ -1,0 +1,70 @@
+syntax = "proto3";
+package bettermq;
+
+service PriorityQueue {
+	rpc Enqueue(EnqueueRequest) returns (EnqueueReply);
+	rpc Dequeue(DequeueRequest) returns (DequeueReply);
+	rpc Ack(AckRequest) returns (AckReply);
+	rpc Nack(NackRequest) returns (NackReply);
+	rpc GetActiveTopics(GetActiveTopicsRequest) returns (GetActiveTopicsReply);	
+}
+
+message EnqueueRequest {
+	string topic = 1;
+	bytes payload = 2;
+	int32 priority = 3;
+	int32 deliver_after = 4;
+	string meta = 5;
+}
+
+message EnqueueReply {
+	string message_id = 1;	
+}
+
+message DequeueRequest {
+	string topic = 1;
+	int32 count = 2;
+	int32 lease_duration = 3;
+}
+
+message DataItem {
+	string message_id = 1;
+	string meta = 2;
+	bytes payload = 3; 
+}
+
+message DequeueReply {
+	repeated DataItem items = 1;	
+}
+
+message AckRequest {
+	string topic = 1;
+	string message_id = 2;
+}
+
+message AckReply {
+
+}
+
+message NackRequest {
+	string topic = 1;
+	string message_id = 2;
+	string meta = 3;
+}
+
+message NackReply {
+
+}
+
+message GetActiveTopicsRequest {
+
+}
+
+message GetActiveTopicsReply {
+	repeated string topics = 1;
+}
+
+message InnerMsg {
+	EnqueueRequest req = 1;
+	uint64 timestatmp = 2;
+}
