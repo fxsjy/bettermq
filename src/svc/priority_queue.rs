@@ -176,6 +176,14 @@ impl PriorityQueueSvc {
         let mut state = self.state.write().unwrap();
         state.worker.cancel_task(&message_id);
         {
+            match state.index_store.remove(&message_id) {
+                Ok(_) => {}
+                Err(err) => {
+                    return Err(Status::unknown(err.to_string().clone()));
+                }
+            }
+        }
+        {
             match state.msg_store.remove(&message_id) {
                 Ok(_) => {}
                 Err(err) => {
