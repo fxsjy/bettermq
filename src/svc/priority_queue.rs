@@ -125,7 +125,8 @@ impl PriorityQueueSvc {
         }
         state.worker.add_task(task_item);
         let reply = EnqueueReply {
-            message_id: format!("{:}_{:}", self.node_id, cur_seq),
+            message_id: format!("{:}", cur_seq),
+            node_id: self.node_id.clone(),
         };
         Ok(Response::new(reply))
     }

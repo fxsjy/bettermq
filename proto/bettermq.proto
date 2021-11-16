@@ -19,6 +19,7 @@ message EnqueueRequest {
 
 message EnqueueReply {
 	string message_id = 1;	
+	string node_id = 2;
 }
 
 message DequeueRequest {
