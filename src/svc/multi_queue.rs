@@ -89,8 +89,10 @@ pub fn new(
         let mut topic_svcs = multi_queue.topics_svc.write().unwrap();
         for topic_name in topics {
             let sub_dir = format!("{:}/{:}", dir, topic_name);
-            let kv_store = kv::new_kvstore(DbKind::SLED, sub_dir).unwrap();
-            let service = make_one_queue(kv_store, &node_id);
+            let index_dir = format!("{:}_index", sub_dir);
+            let msg_store = kv::new_kvstore(DbKind::SLED, sub_dir).unwrap();
+            let index_store = kv::new_kvstore(DbKind::SLED, index_dir).unwrap();
+            let service = make_one_queue(msg_store, index_store, &node_id);
             topic_svcs.insert(topic_name, service);
         }
     }

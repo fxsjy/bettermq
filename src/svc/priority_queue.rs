@@ -3,7 +3,7 @@ use super::utils;
 use super::worker::{TaskItem, Worker};
 use bettermq::{AckReply, AckRequest};
 use bettermq::{DataItem, DequeueReply, DequeueRequest};
-use bettermq::{EnqueueReply, EnqueueRequest, InnerMsg};
+use bettermq::{EnqueueReply, EnqueueRequest, InnerIndex};
 use bettermq::{NackReply, NackRequest};
 use prost::Message;
 use std::sync::{Arc, RwLock};
@@ -14,7 +14,8 @@ pub mod bettermq {
 }
 
 struct SharedState {
-    kv_store: Box<dyn KvStore>,
+    msg_store: Box<dyn KvStore>,
+    index_store: Box<dyn KvStore>,
     worker: Worker,
     seq_no: u64,
 }
@@ -24,9 +25,13 @@ pub struct PriorityQueueSvc {
     node_id: String,
 }
 
-pub fn make_one_queue(kv_store: Box<dyn KvStore>, node_id: &String) -> PriorityQueueSvc {
+pub fn make_one_queue(
+    msg_store: Box<dyn KvStore>,
+    index_store: Box<dyn KvStore>,
+    node_id: &String,
+) -> PriorityQueueSvc {
     let mut seq_no: u64 = 0;
-    match kv_store.max_key() {
+    match msg_store.max_key() {
         Ok(max_key_raw) => {
             let mut dst = [0u8; 8];
             dst.clone_from_slice(&max_key_raw[0..8]);
@@ -36,11 +41,12 @@ pub fn make_one_queue(kv_store: Box<dyn KvStore>, node_id: &String) -> PriorityQ
     }
     let worker = Worker::default();
     let _worker_r = worker.start();
-    rebuild_index(&kv_store, &worker);
+    rebuild_index(&index_store, &worker);
     let service = PriorityQueueSvc {
         state: Arc::new(RwLock::new(SharedState {
             worker: worker,
-            kv_store: kv_store,
+            msg_store: msg_store,
+            index_store: index_store,
             seq_no: seq_no,
         })),
         node_id: node_id.clone(),
@@ -49,13 +55,13 @@ pub fn make_one_queue(kv_store: Box<dyn KvStore>, node_id: &String) -> PriorityQ
     service
 }
 
-fn rebuild_index(kv_store: &Box<dyn KvStore>, worker: &Worker) {
+fn rebuild_index(index_store: &Box<dyn KvStore>, worker: &Worker) {
     let mut start = vec![0 as u8; 1];
     let end = vec![255 as u8; 8];
     let mut total = 0 as u64;
     loop {
         let mut buffer = Vec::<(Vec<u8>, Vec<u8>)>::with_capacity(100);
-        let scan_result = kv_store.scan(&start, &end, 100, &mut buffer);
+        let scan_result = index_store.scan(&start, &end, 100, &mut buffer);
         if buffer.len() == 0 {
             break;
         } else {
@@ -65,11 +71,11 @@ fn rebuild_index(kv_store: &Box<dyn KvStore>, worker: &Worker) {
         if !scan_result.is_err() {
             for (k, v) in buffer {
                 start = k.clone();
-                let inner_msg = InnerMsg::decode(v.as_slice()).unwrap();
+                let inner_index = InnerIndex::decode(v.as_slice()).unwrap();
                 let task_item = TaskItem {
-                    priority: inner_msg.req.unwrap().priority,
-                    timestamp: inner_msg.timestatmp,
-                    message_id: k,
+                    priority: inner_index.priority,
+                    timestamp: inner_index.timestamp,
+                    message_id: inner_index.message_id,
                 };
                 worker.add_task(task_item);
             }
@@ -96,13 +102,22 @@ impl PriorityQueueSvc {
             timestamp: now + request.get_ref().deliver_after as u64 * 1000,
             message_id: message_id.clone(),
         };
-        let mut value_buf = Vec::<u8>::with_capacity(100);
-        let inner_msg = InnerMsg {
-            req: Some(request.get_ref().clone()),
-            timestatmp: task_item.timestamp,
+        let mut value_buf = Vec::<u8>::with_capacity(200);
+        let _r = request.get_ref().encode(&mut value_buf);
+        match state.msg_store.set(&message_id, value_buf) {
+            Ok(_) => {}
+            Err(err) => {
+                return Err(Status::unknown(err.to_string().clone()));
+            }
+        }
+        let mut index_buf = Vec::<u8>::with_capacity(100);
+        let inner_index = InnerIndex {
+            priority: task_item.priority,
+            timestamp: task_item.timestamp,
+            message_id: message_id.clone(),
         };
-        let _r = inner_msg.encode(&mut value_buf);
-        match state.kv_store.set(&message_id, value_buf) {
+        let _r = inner_index.encode(&mut index_buf);
+        match state.index_store.set(&message_id, index_buf) {
             Ok(_) => {}
             Err(err) => {
                 return Err(Status::unknown(err.to_string().clone()));
@@ -136,11 +151,11 @@ impl PriorityQueueSvc {
         let reply_items = task_items
             .iter()
             .filter_map(|ti| {
-                let value_buf = state.kv_store.get(&ti.message_id);
+                let value_buf = state.msg_store.get(&ti.message_id);
                 match value_buf {
                     Ok(value_buf) => {
                         let s_message_id = utils::msgid_to_str(&ti.message_id);
-                        let req = InnerMsg::decode(value_buf.as_slice()).unwrap().req.unwrap();
+                        let req = EnqueueRequest::decode(value_buf.as_slice()).unwrap();
                         Some(DataItem {
                             message_id: s_message_id,
                             payload: req.payload,
@@ -161,7 +176,7 @@ impl PriorityQueueSvc {
         let mut state = self.state.write().unwrap();
         state.worker.cancel_task(&message_id);
         {
-            match state.kv_store.remove(&message_id) {
+            match state.msg_store.remove(&message_id) {
                 Ok(_) => {}
                 Err(err) => {
                     return Err(Status::unknown(err.to_string().clone()));

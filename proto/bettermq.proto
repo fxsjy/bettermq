@@ -64,7 +64,8 @@ message GetActiveTopicsReply {
 	repeated string topics = 1;
 }
 
-message InnerMsg {
-	EnqueueRequest req = 1;
-	uint64 timestatmp = 2;
+message InnerIndex {
+	int32 priority = 1;
+	uint64 timestamp = 2;
+	bytes message_id = 3;
 }
