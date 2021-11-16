@@ -20,10 +20,11 @@ pub struct TaskItem {
 
 impl TaskItem {
     pub fn delayed_copy(&self, seconds: i32) -> TaskItem {
+        let now = utils::timestamp();
         TaskItem {
             priority: self.priority,
             message_id: self.message_id.clone(),
-            timestamp: self.timestamp + (seconds * 1000) as u64,
+            timestamp: now + (seconds * 1000) as u64,
         }
     }
 }

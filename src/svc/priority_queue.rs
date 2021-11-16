@@ -124,6 +124,13 @@ impl PriorityQueueSvc {
         {
             let state = self.state.write().unwrap();
             task_items = state.worker.fetch_tasks(request.get_ref().count as u32);
+            if request.get_ref().lease_duration > 0 {
+                let retry_after = request.get_ref().lease_duration;
+                for task in &task_items {
+                    let retry_task = task.delayed_copy(retry_after);
+                    state.worker.add_task(retry_task);
+                }
+            }
         }
         let state = self.state.read().unwrap();
         let reply_items = task_items
@@ -144,13 +151,6 @@ impl PriorityQueueSvc {
                 }
             })
             .collect();
-        if request.get_ref().lease_duration > 0 {
-            let retry_after = request.get_ref().lease_duration;
-            for task in &task_items {
-                let retry_task = task.delayed_copy(retry_after);
-                state.worker.add_task(retry_task);
-            }
-        }
         let reply = DequeueReply { items: reply_items };
         Ok(Response::new(reply))
     }
