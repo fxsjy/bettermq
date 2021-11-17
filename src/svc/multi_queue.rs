@@ -1,8 +1,8 @@
-use super::super::storage::kv;
-use super::super::storage::kv::DbKind;
-use super::priority_queue::bettermq;
-use super::priority_queue::make_one_queue;
-use super::priority_queue::PriorityQueueSvc;
+use crate::storage::kv;
+use crate::storage::kv::DbKind;
+use crate::svc::priority_queue::bettermq;
+use crate::svc::priority_queue::make_one_queue;
+use crate::svc::priority_queue::PriorityQueueSvc;
 use bettermq::priority_queue_server::PriorityQueue;
 use bettermq::{AckReply, AckRequest};
 use bettermq::{DequeueReply, DequeueRequest};

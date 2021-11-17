@@ -1,6 +1,6 @@
-use super::super::storage::kv::KvStore;
-use super::utils;
-use super::worker::{TaskItem, Worker};
+use crate::storage::kv::KvStore;
+use crate::svc::utils;
+use crate::svc::worker::{TaskItem, Worker};
 use bettermq::{AckReply, AckRequest};
 use bettermq::{DataItem, DequeueReply, DequeueRequest};
 use bettermq::{EnqueueReply, EnqueueRequest, InnerIndex};
