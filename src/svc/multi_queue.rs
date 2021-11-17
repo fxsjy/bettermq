@@ -12,7 +12,7 @@ use bettermq::{NackReply, NackRequest};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tonic::{Request, Response, Status};
-use tracing::info;
+use tracing::trace;
 
 #[derive(Default)]
 pub struct MultiQueueSvc {
@@ -71,7 +71,7 @@ impl PriorityQueue for MultiQueueSvc {
         &self,
         request: Request<GetActiveTopicsRequest>,
     ) -> Result<Response<GetActiveTopicsReply>, Status> {
-        info!("{:?}", request);
+        trace!("{:?}", request);
         let reply = GetActiveTopicsReply {
             topics: vec!["topic-1".into(), "topic-2".into()],
         };

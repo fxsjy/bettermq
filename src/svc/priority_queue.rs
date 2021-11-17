@@ -8,7 +8,7 @@ use bettermq::{NackReply, NackRequest};
 use prost::Message;
 use std::sync::{Arc, RwLock};
 use tonic::{Request, Response, Status};
-use tracing::info;
+use tracing::{info, trace};
 pub mod bettermq {
     tonic::include_proto!("bettermq");
 }
@@ -91,7 +91,7 @@ impl PriorityQueueSvc {
         &self,
         request: Request<EnqueueRequest>,
     ) -> Result<Response<EnqueueReply>, Status> {
-        info!("{:?}", request);
+        trace!("{:?}", request);
         let mut state = self.state.write().unwrap();
         state.seq_no += 1;
         let cur_seq = state.seq_no;
@@ -135,7 +135,7 @@ impl PriorityQueueSvc {
         &self,
         request: Request<DequeueRequest>,
     ) -> Result<Response<DequeueReply>, Status> {
-        info!("{:?}", request);
+        trace!("{:?}", request);
         let task_items: Vec<TaskItem>;
         {
             let state = self.state.write().unwrap();
@@ -183,7 +183,7 @@ impl PriorityQueueSvc {
     }
 
     pub fn ack(&self, request: Request<AckRequest>) -> Result<Response<AckReply>, Status> {
-        info!("{:?}", request);
+        trace!("{:?}", request);
         let message_id = utils::msgid_to_raw(&request.get_ref().message_id);
         let mut state = self.state.write().unwrap();
         if !state.worker.cancel_task(&message_id) {
@@ -197,7 +197,7 @@ impl PriorityQueueSvc {
     }
 
     pub fn nack(&self, request: Request<NackRequest>) -> Result<Response<NackReply>, Status> {
-        info!("{:?}", request);
+        trace!("{:?}", request);
         let reply = NackReply {};
         Ok(Response::new(reply))
     }
