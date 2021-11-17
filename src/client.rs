@@ -55,6 +55,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .value_name("PRIORITY"),
                 )
                 .arg(
+                    Arg::with_name("benchmark")
+                        .short("b")
+                        .long("benchmark")
+                        .default_value("10")
+                        .value_name("FOR MANY TIMES"),
+                )
+                .arg(
                     Arg::with_name("host")
                         .short("h")
                         .long("host")
@@ -144,15 +151,21 @@ async fn run_enqueue(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Er
         let file_name = opts.value_of("file").unwrap();
         payload = fs::read_to_string(file_name)?.as_bytes().to_vec();
     }
-    let request = tonic::Request::new(EnqueueRequest {
-        topic: opts.value_of("topic").unwrap().into(),
-        payload: payload,
-        meta: opts.value_of("meta").unwrap().into(),
-        priority: opts.value_of("priority").unwrap().parse::<i32>().unwrap(),
-        deliver_after: opts.value_of("after").unwrap().parse::<i32>().unwrap(),
-    });
-    let response = client.enqueue(request).await?;
-    println!("{:?}", response);
+    let mut n = 1;
+    if opts.occurrences_of("benchmark") > 0 {
+        n = opts.value_of("benchmark").unwrap().parse::<i32>().unwrap();
+    }
+    for _i in 0..n {
+        let request = tonic::Request::new(EnqueueRequest {
+            topic: opts.value_of("topic").unwrap().into(),
+            payload: payload.clone(),
+            meta: opts.value_of("meta").unwrap().into(),
+            priority: opts.value_of("priority").unwrap().parse::<i32>().unwrap(),
+            deliver_after: opts.value_of("after").unwrap().parse::<i32>().unwrap(),
+        });
+        let response = client.enqueue(request).await?;
+        println!("{:?}", response);
+    }
     Ok(())
 }
 
