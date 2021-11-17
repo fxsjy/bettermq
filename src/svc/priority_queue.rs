@@ -186,7 +186,9 @@ impl PriorityQueueSvc {
         info!("{:?}", request);
         let message_id = utils::msgid_to_raw(&request.get_ref().message_id);
         let mut state = self.state.write().unwrap();
-        state.worker.cancel_task(&message_id);
+        if !state.worker.cancel_task(&message_id) {
+            return Err(Status::not_found("no lease found"));
+        }
         if let Some(value) = self.remove_msg(&mut state, message_id) {
             return value;
         }
