@@ -1,6 +1,7 @@
 use bettermq::priority_queue_client::PriorityQueueClient;
 use bettermq::{AckRequest, DequeueRequest, EnqueueRequest};
 use clap::{App, Arg, ArgMatches, SubCommand};
+use std::fs;
 
 pub mod bettermq {
     tonic::include_proto!("bettermq");
@@ -30,8 +31,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Arg::with_name("payload")
                         .short("p")
                         .long("payload")
-                        .required(true)
+                        .default_value("")
                         .value_name("MESSAGE DATA"),
+                )
+                .arg(
+                    Arg::with_name("file")
+                        .short("f")
+                        .long("file")
+                        .value_name("FILE NAME FOR PAYLOAD"),
                 )
                 .arg(
                     Arg::with_name("after")
@@ -132,9 +139,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 async fn run_enqueue(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Error>> {
     let mut client = make_conn(opts).await?;
+    let mut payload = opts.value_of("payload").unwrap().as_bytes().to_vec();
+    if opts.occurrences_of("file") > 0 {
+        let file_name = opts.value_of("file").unwrap();
+        payload = fs::read_to_string(file_name)?.as_bytes().to_vec();
+    }
     let request = tonic::Request::new(EnqueueRequest {
         topic: opts.value_of("topic").unwrap().into(),
-        payload: opts.value_of("payload").unwrap().as_bytes().to_vec(),
+        payload: payload,
         meta: opts.value_of("meta").unwrap().into(),
         priority: opts.value_of("priority").unwrap().parse::<i32>().unwrap(),
         deliver_after: opts.value_of("after").unwrap().parse::<i32>().unwrap(),
