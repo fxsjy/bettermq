@@ -14,6 +14,12 @@ pub fn msgid_to_str(raw: &Vec<u8>) -> String {
     format!("{}", u64::from_be_bytes(dst))
 }
 
+pub fn msgid_to_u64(raw: &Vec<u8>) -> u64 {
+    let mut dst = [0 as u8; 8];
+    dst.clone_from_slice(&raw.as_slice()[0..8]);
+    u64::from_be_bytes(dst)
+}
+
 pub fn msgid_to_raw(sid: &String) -> Vec<u8> {
     let n = sid.parse::<u64>().unwrap();
     n.to_be_bytes().to_vec()

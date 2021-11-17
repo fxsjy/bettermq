@@ -15,36 +15,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(
                     Arg::with_name("topic")
                         .short("t")
+                        .long("topic")
                         .default_value("root")
                         .value_name("TOPIC"),
                 )
                 .arg(
                     Arg::with_name("meta")
                         .short("m")
+                        .long("meta")
                         .default_value("meta")
                         .value_name("METAINFO"),
                 )
                 .arg(
                     Arg::with_name("payload")
                         .short("p")
+                        .long("payload")
                         .required(true)
                         .value_name("MESSAGE DATA"),
                 )
                 .arg(
                     Arg::with_name("after")
                         .short("a")
+                        .long("after")
                         .default_value("0")
                         .value_name("DELIVERY AFTER"),
                 )
                 .arg(
                     Arg::with_name("priority")
                         .short("r")
+                        .long("priority")
                         .default_value("0")
                         .value_name("PRIORITY"),
                 )
                 .arg(
                     Arg::with_name("host")
                         .short("h")
+                        .long("host")
                         .default_value("http://127.0.0.1:8404")
                         .value_name("HOST ADDRESS"),
                 ),
@@ -55,24 +61,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(
                     Arg::with_name("topic")
                         .short("t")
+                        .long("topic")
                         .default_value("root")
                         .value_name("TOPIC"),
                 )
                 .arg(
                     Arg::with_name("count")
                         .short("c")
+                        .long("count")
                         .default_value("1")
                         .value_name("COUNT"),
                 )
                 .arg(
                     Arg::with_name("lease")
                         .short("l")
+                        .long("lease")
                         .default_value("0")
                         .value_name("LEASE"),
                 )
                 .arg(
                     Arg::with_name("host")
                         .short("h")
+                        .long("host")
                         .default_value("http://127.0.0.1:8404")
                         .value_name("HOST ADDRESS"),
                 ),
@@ -83,18 +93,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .arg(
                     Arg::with_name("topic")
                         .short("t")
+                        .long("topic")
                         .default_value("root")
                         .value_name("TOPIC"),
                 )
                 .arg(
                     Arg::with_name("id")
                         .short("i")
+                        .long("id")
                         .required(true)
                         .value_name("MESSAGE ID"),
                 )
                 .arg(
                     Arg::with_name("host")
                         .short("h")
+                        .long("host")
                         .default_value("http://127.0.0.1:8404")
                         .value_name("HOST ADDRESS"),
                 ),

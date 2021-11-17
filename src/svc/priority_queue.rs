@@ -148,8 +148,20 @@ impl PriorityQueueSvc {
                 }
             }
         }
+        let reply_items = self.fill_payload(task_items);
+        if request.get_ref().lease_duration <= 0 {
+            let mut state = self.state.write().unwrap();
+            for item in &reply_items {
+                self.remove_msg(&mut state, utils::msgid_to_raw(&item.message_id));
+            }
+        }
+        let reply = DequeueReply { items: reply_items };
+        Ok(Response::new(reply))
+    }
+
+    fn fill_payload(&self, task_items: Vec<TaskItem>) -> Vec<DataItem> {
         let state = self.state.read().unwrap();
-        let reply_items = task_items
+        let reply_items: Vec<DataItem> = task_items
             .iter()
             .filter_map(|ti| {
                 let value_buf = state.msg_store.get(&ti.message_id);
@@ -167,8 +179,7 @@ impl PriorityQueueSvc {
                 }
             })
             .collect();
-        let reply = DequeueReply { items: reply_items };
-        Ok(Response::new(reply))
+        reply_items
     }
 
     pub fn ack(&self, request: Request<AckRequest>) -> Result<Response<AckReply>, Status> {
@@ -176,21 +187,8 @@ impl PriorityQueueSvc {
         let message_id = utils::msgid_to_raw(&request.get_ref().message_id);
         let mut state = self.state.write().unwrap();
         state.worker.cancel_task(&message_id);
-        {
-            match state.index_store.remove(&message_id) {
-                Ok(_) => {}
-                Err(err) => {
-                    return Err(Status::unknown(err.to_string().clone()));
-                }
-            }
-        }
-        {
-            match state.msg_store.remove(&message_id) {
-                Ok(_) => {}
-                Err(err) => {
-                    return Err(Status::unknown(err.to_string().clone()));
-                }
-            }
+        if let Some(value) = self.remove_msg(&mut state, message_id) {
+            return value;
         }
         let reply = AckReply {};
         Ok(Response::new(reply))
@@ -200,5 +198,29 @@ impl PriorityQueueSvc {
         info!("{:?}", request);
         let reply = NackReply {};
         Ok(Response::new(reply))
+    }
+
+    fn remove_msg(
+        &self,
+        state: &mut std::sync::RwLockWriteGuard<SharedState>,
+        message_id: Vec<u8>,
+    ) -> Option<Result<Response<AckReply>, Status>> {
+        match state.index_store.remove(&message_id) {
+            Ok(_) => {}
+            Err(err) => {
+                return Some(Err(Status::unknown(err.to_string().clone())));
+            }
+        }
+        let msgid = utils::msgid_to_u64(&message_id);
+        if msgid == state.seq_no {
+            return None;
+        }
+        match state.msg_store.remove(&message_id) {
+            Ok(_) => {}
+            Err(err) => {
+                return Some(Err(Status::unknown(err.to_string().clone())));
+            }
+        }
+        None
     }
 }
