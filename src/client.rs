@@ -167,14 +167,6 @@ async fn run_dequeue(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Er
     let response = client.dequeue(request).await?;
     for item in response.get_ref().items.iter() {
         println!("{:?}", item);
-        if lease == 0 {
-            let request = tonic::Request::new(AckRequest {
-                message_id: item.message_id.clone(),
-                topic: opts.value_of("topic").unwrap().into(),
-            });
-            let response = client.ack(request).await?;
-            println!("{:?}", response);
-        }
     }
     Ok(())
 }
