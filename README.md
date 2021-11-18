@@ -1,7 +1,9 @@
 # bettermq
 A better message queue built by rust
 
-start the project to study Rust
+I start this project to study Rust, and the idea is from Facebook's FOQS
+
+protocol: https://github.com/fxsjy/bettermq/tree/main/proto
 
 # bmq-cli 
 
