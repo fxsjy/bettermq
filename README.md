@@ -3,7 +3,7 @@ A better message queue built by rust
 
 I start this project to study Rust, and the idea is from Facebook's FOQS
 
-protocol: https://github.com/fxsjy/bettermq/tree/main/proto
+protocol: https://github.com/fxsjy/bettermq/blob/main/proto/bettermq.proto
 
 # bmq-cli 
 
