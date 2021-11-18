@@ -66,7 +66,7 @@ OPTIONS:
     -t, --topic <TOPIC>           [default: root]
 ```
 
-# bmq-cli-ack 
+# bmq-cli ack 
 
 ```
 ack a message
