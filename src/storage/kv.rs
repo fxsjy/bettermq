@@ -15,7 +15,7 @@ pub enum KvError {
 
 pub trait KvStore: Send + Sync + 'static {
     fn get(&self, key: &Vec<u8>) -> Result<Vec<u8>, KvError>;
-    fn set(&mut self, key: &Vec<u8>, value: Vec<u8>) -> Result<(), KvError>;
+    fn set(&self, key: &Vec<u8>, value: Vec<u8>) -> Result<(), KvError>;
     fn min_key(&self) -> Result<Vec<u8>, KvError>;
     fn max_key(&self) -> Result<Vec<u8>, KvError>;
     fn scan(
@@ -25,7 +25,7 @@ pub trait KvStore: Send + Sync + 'static {
         limit: u32,
         items: &mut Vec<(Vec<u8>, Vec<u8>)>,
     ) -> Result<(), KvError>;
-    fn remove(&mut self, key: &Vec<u8>) -> Result<(), KvError>;
+    fn remove(&self, key: &Vec<u8>) -> Result<(), KvError>;
 }
 
 #[derive(Debug)]
@@ -60,7 +60,7 @@ impl KvStore for SledKv {
             Err(err) => Err(KvError::IoError(err.to_string())),
         }
     }
-    fn set(&mut self, key: &Vec<u8>, value: Vec<u8>) -> Result<(), KvError> {
+    fn set(&self, key: &Vec<u8>, value: Vec<u8>) -> Result<(), KvError> {
         let r = self.db.insert(key, value);
         match r {
             Ok(_) => Ok(()),
@@ -117,7 +117,7 @@ impl KvStore for SledKv {
         }
     }
 
-    fn remove(&mut self, key: &Vec<u8>) -> Result<(), KvError> {
+    fn remove(&self, key: &Vec<u8>) -> Result<(), KvError> {
         let r = self.db.remove(key);
         match r {
             Ok(_) => Ok(()),
@@ -130,8 +130,8 @@ impl KvStore for Box<dyn KvStore> {
     fn get(&self, key: &Vec<u8>) -> Result<Vec<u8>, KvError> {
         self.as_ref().get(key)
     }
-    fn set(&mut self, key: &Vec<u8>, value: Vec<u8>) -> Result<(), KvError> {
-        self.as_mut().set(key, value)
+    fn set(&self, key: &Vec<u8>, value: Vec<u8>) -> Result<(), KvError> {
+        self.as_ref().set(key, value)
     }
     fn scan(
         &self,
@@ -148,7 +148,7 @@ impl KvStore for Box<dyn KvStore> {
     fn max_key(&self) -> Result<Vec<u8>, KvError> {
         self.as_ref().max_key()
     }
-    fn remove(&mut self, key: &Vec<u8>) -> Result<(), KvError> {
-        self.as_mut().remove(key)
+    fn remove(&self, key: &Vec<u8>) -> Result<(), KvError> {
+        self.as_ref().remove(key)
     }
 }

@@ -92,9 +92,12 @@ impl PriorityQueueSvc {
         request: Request<EnqueueRequest>,
     ) -> Result<Response<EnqueueReply>, Status> {
         trace!("{:?}", request);
-        let mut state = self.state.write().unwrap();
-        state.seq_no += 1;
-        let cur_seq = state.seq_no;
+        let cur_seq: u64;
+        {
+            let mut state = self.state.write().unwrap();
+            state.seq_no += 1;
+            cur_seq = state.seq_no;
+        }
         let message_id = cur_seq.to_be_bytes().to_vec();
         let now = utils::timestamp();
         let task_item = TaskItem {
@@ -104,12 +107,6 @@ impl PriorityQueueSvc {
         };
         let mut value_buf = Vec::<u8>::with_capacity(200);
         let _r = request.get_ref().encode(&mut value_buf);
-        match state.msg_store.set(&message_id, value_buf) {
-            Ok(_) => {}
-            Err(err) => {
-                return Err(Status::unknown(err.to_string().clone()));
-            }
-        }
         let mut index_buf = Vec::<u8>::with_capacity(100);
         let inner_index = InnerIndex {
             priority: task_item.priority,
@@ -117,13 +114,25 @@ impl PriorityQueueSvc {
             message_id: message_id.clone(),
         };
         let _r = inner_index.encode(&mut index_buf);
-        match state.index_store.set(&message_id, index_buf) {
-            Ok(_) => {}
-            Err(err) => {
-                return Err(Status::unknown(err.to_string().clone()));
+        {
+            let state = self.state.read().unwrap();
+            match state.msg_store.set(&message_id, value_buf) {
+                Ok(_) => {}
+                Err(err) => {
+                    return Err(Status::unknown(err.to_string().clone()));
+                }
+            }
+            match state.index_store.set(&message_id, index_buf) {
+                Ok(_) => {}
+                Err(err) => {
+                    return Err(Status::unknown(err.to_string().clone()));
+                }
             }
         }
-        state.worker.add_task(task_item);
+        {
+            let state = self.state.write().unwrap();
+            state.worker.add_task(task_item);
+        }
         let reply = EnqueueReply {
             message_id: format!("{:}", cur_seq),
             node_id: self.node_id.clone(),
@@ -150,9 +159,9 @@ impl PriorityQueueSvc {
         }
         let reply_items = self.fill_payload(task_items);
         if request.get_ref().lease_duration <= 0 {
-            let mut state = self.state.write().unwrap();
+            let state = self.state.read().unwrap();
             for item in &reply_items {
-                self.remove_msg(&mut state, utils::msgid_to_raw(&item.message_id));
+                self.remove_msg(&state, utils::msgid_to_raw(&item.message_id));
             }
         }
         let reply = DequeueReply { items: reply_items };
@@ -185,12 +194,17 @@ impl PriorityQueueSvc {
     pub fn ack(&self, request: Request<AckRequest>) -> Result<Response<AckReply>, Status> {
         trace!("{:?}", request);
         let message_id = utils::msgid_to_raw(&request.get_ref().message_id);
-        let mut state = self.state.write().unwrap();
-        if !state.worker.cancel_task(&message_id) {
-            return Err(Status::not_found("no lease found"));
+        {
+            let state = self.state.write().unwrap();
+            if !state.worker.cancel_task(&message_id) {
+                return Err(Status::not_found("no lease found"));
+            }
         }
-        if let Some(value) = self.remove_msg(&mut state, message_id) {
-            return value;
+        {
+            let state = self.state.read().unwrap();
+            if let Some(value) = self.remove_msg(&state, message_id) {
+                return value;
+            }
         }
         let reply = AckReply {};
         Ok(Response::new(reply))
@@ -204,7 +218,7 @@ impl PriorityQueueSvc {
 
     fn remove_msg(
         &self,
-        state: &mut std::sync::RwLockWriteGuard<SharedState>,
+        state: &std::sync::RwLockReadGuard<SharedState>,
         message_id: Vec<u8>,
     ) -> Option<Result<Response<AckReply>, Status>> {
         match state.index_store.remove(&message_id) {
