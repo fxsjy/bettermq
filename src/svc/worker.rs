@@ -45,7 +45,7 @@ impl Worker {
     pub fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
         let tasks = self.tasks.clone();
         let forever = task::spawn(async move {
-            let mut interval = time::interval(Duration::from_millis(100));
+            let mut interval = time::interval(Duration::from_millis(50));
             loop {
                 interval.tick().await;
                 let now = utils::timestamp();

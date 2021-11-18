@@ -226,3 +226,109 @@ impl PriorityQueueSvc {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::super::storage::kv;
+    use super::*;
+    use temp_dir::TempDir;
+    use tokio::time::{sleep, Duration};
+    #[tokio::test]
+    async fn basic_put_get() {
+        let tmp_dir = TempDir::new().unwrap();
+        let sub_dir = tmp_dir.path().to_str().unwrap().into();
+        let index_dir = format!("{}_index", sub_dir);
+        let msg_store = kv::new_kvstore(kv::DbKind::SLED, sub_dir).unwrap();
+        let index_store = kv::new_kvstore(kv::DbKind::SLED, index_dir).unwrap();
+        let service = make_one_queue(msg_store, index_store, &"test_node".into());
+        let r1 = tonic::Request::new(EnqueueRequest {
+            topic: "test".into(),
+            payload: vec![1, 2, 3],
+            meta: "r1".into(),
+            priority: 1,
+            deliver_after: 0,
+        });
+        let r2 = tonic::Request::new(EnqueueRequest {
+            topic: "test".into(),
+            payload: vec![1, 2, 3],
+            meta: "r2".into(),
+            priority: 0,
+            deliver_after: 0,
+        });
+        let r3 = tonic::Request::new(EnqueueRequest {
+            topic: "test".into(),
+            payload: vec![1, 2, 3],
+            meta: "r3".into(),
+            priority: 1,
+            deliver_after: 0,
+        });
+        let r4 = tonic::Request::new(EnqueueRequest {
+            topic: "test".into(),
+            payload: vec![1, 2, 3],
+            meta: "r4".into(),
+            priority: -1,
+            deliver_after: 2,
+        });
+        let result1 = service.enqueue(r1);
+        assert!(result1.is_ok());
+        let result2 = service.enqueue(r2);
+        assert!(result2.is_ok());
+        let result3 = service.enqueue(r3);
+        assert!(result3.is_ok());
+        let result4 = service.enqueue(r4);
+        assert!(result4.is_ok());
+        let pops = service
+            .dequeue(tonic::Request::new(DequeueRequest {
+                topic: "test".into(),
+                count: 4,
+                lease_duration: 0,
+            }))
+            .unwrap();
+        let mut n = 0 as i32;
+        for x in &pops.get_ref().items {
+            match n {
+                0 => {
+                    assert_eq!(x.meta, "r2");
+                }
+                1 => {
+                    assert_eq!(x.meta, "r1");
+                }
+                2 => {
+                    assert_eq!(x.meta, "r3");
+                }
+                _ => {}
+            }
+            n = n + 1;
+        }
+        println!("sleep 2 seconds");
+        sleep(Duration::from_millis(2100)).await;
+        let pops = service
+            .dequeue(tonic::Request::new(DequeueRequest {
+                topic: "test".into(),
+                count: 1,
+                lease_duration: 5,
+            }))
+            .unwrap();
+        assert_eq!(pops.get_ref().items[0].meta, "r4");
+        println!("sleep 5 seconds");
+        sleep(Duration::from_millis(5100)).await;
+        let pops = service
+            .dequeue(tonic::Request::new(DequeueRequest {
+                topic: "test".into(),
+                count: 1,
+                lease_duration: 0,
+            }))
+            .unwrap();
+        assert_eq!(pops.get_ref().items[0].meta, "r4");
+        println!("sleep 5 seconds");
+        sleep(Duration::from_millis(5100)).await;
+        let pops = service
+            .dequeue(tonic::Request::new(DequeueRequest {
+                topic: "test".into(),
+                count: 1,
+                lease_duration: 0,
+            }))
+            .unwrap();
+        assert_eq!(pops.get_ref().items.len(), 0);
+    }
+}
