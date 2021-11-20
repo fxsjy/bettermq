@@ -159,8 +159,8 @@ impl PriorityQueueSvc {
         }
         let reply_items = self.fill_payload(task_items);
         if request.get_ref().lease_duration <= 0 {
-            let state = self.state.read().unwrap();
             for item in &reply_items {
+                let state = self.state.read().unwrap();
                 self.remove_msg(&state, utils::msgid_to_raw(&item.message_id));
             }
         }
