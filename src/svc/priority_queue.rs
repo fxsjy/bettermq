@@ -102,7 +102,7 @@ impl PriorityQueueSvc {
         let now = utils::timestamp();
         let task_item = TaskItem {
             priority: request.get_ref().priority,
-            timestamp: now + request.get_ref().deliver_after as u64 * 1000,
+            timestamp: now + request.get_ref().deliver_after as u64,
             message_id: message_id.clone(),
         };
         let mut value_buf = Vec::<u8>::with_capacity(200);

@@ -13,7 +13,7 @@ message EnqueueRequest {
 	string topic = 1;
 	bytes payload = 2;
 	int32 priority = 3;
-	int32 deliver_after = 4;
+	int32 deliver_after = 4; //ms
 	string meta = 5;
 }
 
@@ -25,7 +25,7 @@ message EnqueueReply {
 message DequeueRequest {
 	string topic = 1;
 	int32 count = 2;
-	int32 lease_duration = 3;
+	int32 lease_duration = 3; //ms
 }
 
 message DataItem {

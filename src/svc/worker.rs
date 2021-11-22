@@ -19,12 +19,12 @@ pub struct TaskItem {
 }
 
 impl TaskItem {
-    pub fn delayed_copy(&self, seconds: i32) -> TaskItem {
+    pub fn delayed_copy(&self, milli_seconds: i32) -> TaskItem {
         let now = utils::timestamp();
         TaskItem {
             priority: self.priority,
             message_id: self.message_id.clone(),
-            timestamp: now + (seconds * 1000) as u64,
+            timestamp: now + milli_seconds as u64,
         }
     }
 }
@@ -45,7 +45,7 @@ impl Worker {
     pub fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
         let tasks = self.tasks.clone();
         let forever = task::spawn(async move {
-            let mut interval = time::interval(Duration::from_millis(50));
+            let mut interval = time::interval(Duration::from_millis(5));
             loop {
                 interval.tick().await;
                 let now = utils::timestamp();
