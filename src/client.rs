@@ -1,5 +1,5 @@
 use bettermq::priority_queue_client::PriorityQueueClient;
-use bettermq::{AckRequest, DequeueRequest, EnqueueRequest};
+use bettermq::{AckRequest, DequeueRequest, EnqueueRequest, NackRequest};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use std::fs;
 
@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .short("a")
                         .long("after")
                         .default_value("0")
-                        .value_name("DELIVERY AFTER"),
+                        .value_name("DELIVERY AFTER(ms)"),
                 )
                 .arg(
                     Arg::with_name("priority")
@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .short("l")
                         .long("lease")
                         .default_value("0")
-                        .value_name("LEASE"),
+                        .value_name("LEASE(ms)"),
                 )
                 .arg(
                     Arg::with_name("host")
@@ -126,6 +126,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .value_name("HOST ADDRESS"),
                 ),
         )
+        .subcommand(
+            SubCommand::with_name("nack")
+                .about("nack a message")
+                .arg(
+                    Arg::with_name("topic")
+                        .short("t")
+                        .long("topic")
+                        .default_value("root")
+                        .value_name("TOPIC"),
+                )
+                .arg(
+                    Arg::with_name("id")
+                        .short("i")
+                        .long("id")
+                        .required(true)
+                        .value_name("MESSAGE ID"),
+                )
+                .arg(
+                    Arg::with_name("host")
+                        .short("h")
+                        .long("host")
+                        .default_value("http://127.0.0.1:8404")
+                        .value_name("HOST ADDRESS"),
+                )
+                .arg(
+                    Arg::with_name("meta")
+                        .short("m")
+                        .long("meta")
+                        .default_value("")
+                        .value_name("NEW MEATA INFO"),
+                )
+                .arg(
+                    Arg::with_name("after")
+                        .short("a")
+                        .long("after")
+                        .default_value("0")
+                        .value_name("DELIVER AFTER (ms)"),
+                ),
+        )
         .get_matches();
     match opts.subcommand() {
         ("enqueue", Some(subm)) => {
@@ -136,6 +175,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         ("ack", Some(subm)) => {
             run_ack(subm).await?;
+        }
+        ("nack", Some(subm)) => {
+            run_nack(subm).await?;
         }
         _ => {
             return Ok(());
@@ -161,7 +203,7 @@ async fn run_enqueue(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Er
             payload: payload.clone(),
             meta: opts.value_of("meta").unwrap().into(),
             priority: opts.value_of("priority").unwrap().parse::<i32>().unwrap(),
-            deliver_after: opts.value_of("after").unwrap().parse::<i32>().unwrap(),
+            deliver_after: opts.value_of("after").unwrap().parse::<u32>().unwrap(),
         });
         let response = client.enqueue(request).await?;
         println!("{:?}", response);
@@ -204,6 +246,20 @@ async fn run_ack(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Error>
         topic: opts.value_of("topic").unwrap().into(),
     });
     let response = client.ack(request).await?;
+    println!("{:?}", response);
+    Ok(())
+}
+
+async fn run_nack(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Error>> {
+    let mut client = make_conn(opts).await?;
+    let message_id = opts.value_of("id").unwrap().into();
+    let request = tonic::Request::new(NackRequest {
+        message_id: message_id,
+        topic: opts.value_of("topic").unwrap().into(),
+        meta: opts.value_of("meta").unwrap().into(),
+        deliver_after: opts.value_of("after").unwrap().parse::<u32>().unwrap(),
+    });
+    let response = client.nack(request).await?;
     println!("{:?}", response);
     Ok(())
 }

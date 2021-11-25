@@ -98,6 +98,18 @@ impl PriorityQueueSvc {
             state.seq_no += 1;
             cur_seq = state.seq_no;
         }
+        let result = self.enqueue_with_id(cur_seq, request);
+        match result {
+            Ok(value) => Ok(Response::new(value)),
+            Err(err) => Err(err),
+        }
+    }
+
+    fn enqueue_with_id(
+        &self,
+        cur_seq: u64,
+        request: Request<EnqueueRequest>,
+    ) -> Result<EnqueueReply, Status> {
         let message_id = cur_seq.to_be_bytes().to_vec();
         let now = utils::timestamp();
         let task_item = TaskItem {
@@ -137,7 +149,7 @@ impl PriorityQueueSvc {
             message_id: format!("{:}", cur_seq),
             node_id: self.node_id.clone(),
         };
-        Ok(Response::new(reply))
+        Ok(reply)
     }
 
     pub fn dequeue(
@@ -212,8 +224,53 @@ impl PriorityQueueSvc {
 
     pub fn nack(&self, request: Request<NackRequest>) -> Result<Response<NackReply>, Status> {
         trace!("{:?}", request);
-        let reply = NackReply {};
-        Ok(Response::new(reply))
+        let message_id = utils::msgid_to_raw(&request.get_ref().message_id);
+        {
+            let state = self.state.write().unwrap();
+            let _canceled = state.worker.cancel_task(&message_id);
+        }
+        let old_payload: Vec<u8>;
+        let old_priority: i32;
+        let old_meta: String;
+        let new_meta: String;
+        {
+            let state = self.state.read().unwrap();
+            let value_buf = state.msg_store.get(&message_id);
+            match value_buf {
+                Ok(value_buf) => {
+                    let raw_req = EnqueueRequest::decode(value_buf.as_slice()).unwrap();
+                    old_payload = raw_req.payload;
+                    old_priority = raw_req.priority;
+                    old_meta = raw_req.meta;
+                }
+                Err(err) => {
+                    return Err(Status::not_found(err.to_string()));
+                }
+            }
+        }
+        if request.get_ref().meta.len() > 0 {
+            new_meta = request.get_ref().meta.clone();
+        } else {
+            new_meta = old_meta;
+        }
+        let enq_again_request = tonic::Request::new(EnqueueRequest {
+            topic: request.get_ref().topic.clone(),
+            payload: old_payload,
+            meta: new_meta,
+            priority: old_priority,
+            deliver_after: request.get_ref().deliver_after,
+        });
+        let seq_no = utils::msgid_to_u64(&message_id);
+        let enq_ret = self.enqueue_with_id(seq_no, enq_again_request);
+        match enq_ret {
+            Ok(_) => {
+                let reply = NackReply {};
+                return Ok(Response::new(reply));
+            }
+            Err(err) => {
+                return Err(err);
+            }
+        }
     }
 
     fn remove_msg(
