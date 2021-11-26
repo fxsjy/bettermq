@@ -194,6 +194,7 @@ impl PriorityQueueSvc {
                             message_id: s_message_id,
                             payload: req.payload,
                             meta: req.meta,
+                            priority: req.priority,
                         })
                     }
                     Err(_) => None,

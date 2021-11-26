@@ -32,6 +32,7 @@ message DataItem {
 	string message_id = 1;
 	string meta = 2;
 	bytes payload = 3; 
+	int32 priority = 4;
 }
 
 message DequeueReply {
