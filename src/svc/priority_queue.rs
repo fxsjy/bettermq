@@ -328,7 +328,7 @@ mod tests {
         let index_dir = format!("{}_index", sub_dir);
         let msg_store = kv::new_kvstore(kv::DbKind::SLED, sub_dir).unwrap();
         let index_store = kv::new_kvstore(kv::DbKind::SLED, index_dir).unwrap();
-        let service = make_one_queue(msg_store, index_store, &"test_node".into());
+        let service = make_one_queue(msg_store, index_store, &"test_node".into(), &"root".into());
         let r1 = tonic::Request::new(EnqueueRequest {
             topic: "test".into(),
             payload: vec![1, 2, 3],
