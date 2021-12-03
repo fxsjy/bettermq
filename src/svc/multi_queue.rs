@@ -12,7 +12,6 @@ use bettermq::{NackReply, NackRequest};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tonic::{Request, Response, Status};
-use tracing::trace;
 
 #[derive(Default)]
 pub struct MultiQueueSvc {
@@ -69,11 +68,15 @@ impl PriorityQueue for MultiQueueSvc {
 
     async fn get_active_topics(
         &self,
-        request: Request<GetActiveTopicsRequest>,
+        _request: Request<GetActiveTopicsRequest>,
     ) -> Result<Response<GetActiveTopicsReply>, Status> {
-        trace!("{:?}", request);
+        let topics_svc = self.topics_svc.read().unwrap();
+        let topics_stats = topics_svc
+            .iter()
+            .map(|(_topic_name, topic_svc)| topic_svc.get_stats())
+            .collect();
         let reply = GetActiveTopicsReply {
-            topics: vec!["topic-1".into(), "topic-2".into()],
+            topics: topics_stats,
         };
         Ok(Response::new(reply))
     }
@@ -92,7 +95,7 @@ pub fn new(
             let index_dir = format!("{:}_index", sub_dir);
             let msg_store = kv::new_kvstore(DbKind::SLED, sub_dir).unwrap();
             let index_store = kv::new_kvstore(DbKind::SLED, index_dir).unwrap();
-            let service = make_one_queue(msg_store, index_store, &node_id);
+            let service = make_one_queue(msg_store, index_store, &node_id, &topic_name);
             topic_svcs.insert(topic_name, service);
         }
     }

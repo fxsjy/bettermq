@@ -18,6 +18,11 @@ pub struct TaskItem {
     pub message_id: Vec<u8>,
 }
 
+pub struct QueueStats {
+    pub ready_size: u64,
+    pub delayed_size: u64,
+}
+
 impl TaskItem {
     pub fn delayed_copy(&self, milli_seconds: i32) -> TaskItem {
         let now = utils::timestamp();
@@ -111,6 +116,14 @@ impl Worker {
             false
         } else {
             tasks.in_wheel.remove(message_id)
+        }
+    }
+
+    pub fn stats(&self) -> QueueStats {
+        let tasks = self.tasks.lock().unwrap();
+        QueueStats {
+            ready_size: tasks.ready_queue.len() as u64,
+            delayed_size: tasks.in_wheel.len() as u64,
         }
     }
 }

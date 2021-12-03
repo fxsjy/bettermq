@@ -1,6 +1,7 @@
 use crate::storage::kv::KvStore;
 use crate::svc::utils;
 use crate::svc::worker::{TaskItem, Worker};
+use bettermq::TopicStats;
 use bettermq::{AckReply, AckRequest};
 use bettermq::{DataItem, DequeueReply, DequeueRequest};
 use bettermq::{EnqueueReply, EnqueueRequest, InnerIndex};
@@ -9,6 +10,7 @@ use prost::Message;
 use std::sync::{Arc, RwLock};
 use tonic::{Request, Response, Status};
 use tracing::{info, trace};
+
 pub mod bettermq {
     tonic::include_proto!("bettermq");
 }
@@ -23,12 +25,14 @@ struct SharedState {
 pub struct PriorityQueueSvc {
     state: Arc<RwLock<SharedState>>,
     node_id: String,
+    topic: String,
 }
 
 pub fn make_one_queue(
     msg_store: Box<dyn KvStore>,
     index_store: Box<dyn KvStore>,
     node_id: &String,
+    topic: &String,
 ) -> PriorityQueueSvc {
     let mut seq_no: u64 = 0;
     match msg_store.max_key() {
@@ -50,6 +54,7 @@ pub fn make_one_queue(
             seq_no: seq_no,
         })),
         node_id: node_id.clone(),
+        topic: topic.clone(),
     };
     info!("seq_no: {:?}", seq_no);
     service
@@ -202,6 +207,17 @@ impl PriorityQueueSvc {
             })
             .collect();
         reply_items
+    }
+
+    pub fn get_stats(&self) -> TopicStats {
+        let state = self.state.read().unwrap();
+        let stats = state.worker.stats();
+        let stats = TopicStats {
+            topic: self.topic.clone(),
+            ready_size: stats.ready_size,
+            delayed_size: stats.delayed_size,
+        };
+        stats
     }
 
     pub fn ack(&self, request: Request<AckRequest>) -> Result<Response<AckReply>, Status> {

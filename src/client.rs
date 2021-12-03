@@ -1,5 +1,5 @@
 use bettermq::priority_queue_client::PriorityQueueClient;
-use bettermq::{AckRequest, DequeueRequest, EnqueueRequest, NackRequest};
+use bettermq::{AckRequest, DequeueRequest, EnqueueRequest, GetActiveTopicsRequest, NackRequest};
 use clap::{App, Arg, ArgMatches, SubCommand};
 use std::fs;
 
@@ -127,6 +127,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ),
         )
         .subcommand(
+            SubCommand::with_name("stats")
+                .about("get statistics of server")
+                .arg(
+                    Arg::with_name("host")
+                        .short("h")
+                        .long("host")
+                        .default_value("http://127.0.0.1:8404")
+                        .value_name("HOST ADDRESS"),
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("nack")
                 .about("nack a message")
                 .arg(
@@ -178,6 +189,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         ("nack", Some(subm)) => {
             run_nack(subm).await?;
+        }
+        ("stats", Some(subm)) => {
+            run_stats(subm).await?;
         }
         _ => {
             return Ok(());
@@ -261,5 +275,15 @@ async fn run_nack(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Error
     });
     let response = client.nack(request).await?;
     println!("{:?}", response);
+    Ok(())
+}
+
+async fn run_stats(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Error>> {
+    let mut client = make_conn(opts).await?;
+    let request = tonic::Request::new(GetActiveTopicsRequest {});
+    let response = client.get_active_topics(request).await?;
+    for st in &response.get_ref().topics {
+        println!("{:?}", st);
+    }
     Ok(())
 }

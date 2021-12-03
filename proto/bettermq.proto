@@ -63,8 +63,14 @@ message GetActiveTopicsRequest {
 
 }
 
+message TopicStats {
+	string topic = 1;
+	uint64 ready_size = 2;
+	uint64 delayed_size = 3;
+}
+
 message GetActiveTopicsReply {
-	repeated string topics = 1;
+	repeated TopicStats topics = 1;
 }
 
 message InnerIndex {
