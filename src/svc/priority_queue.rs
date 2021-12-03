@@ -43,7 +43,7 @@ pub fn make_one_queue(
         }
         Err(_) => {}
     }
-    let worker = Worker::default();
+    let mut worker = Worker::default();
     let _worker_r = worker.start();
     rebuild_index(&index_store, &worker);
     let service = PriorityQueueSvc {
@@ -312,6 +312,11 @@ impl PriorityQueueSvc {
             }
         }
         None
+    }
+
+    pub async fn stop(&self) {
+        let state = self.state.write().unwrap();
+        state.worker.stop();
     }
 }
 

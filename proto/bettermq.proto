@@ -7,6 +7,7 @@ service PriorityQueue {
 	rpc Ack(AckRequest) returns (AckReply);
 	rpc Nack(NackRequest) returns (NackReply);
 	rpc GetActiveTopics(GetActiveTopicsRequest) returns (GetActiveTopicsReply);	
+	rpc CreateTopic(CreateTopicRequest) returns (CreateTopicReply);
 }
 
 message EnqueueRequest {
@@ -77,4 +78,13 @@ message InnerIndex {
 	int32 priority = 1;
 	uint64 timestamp = 2;
 	bytes message_id = 3;
+}
+
+
+message CreateTopicRequest {
+	string topic = 1;
+}
+
+message CreateTopicReply {
+
 }

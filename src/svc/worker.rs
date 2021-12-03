@@ -37,6 +37,7 @@ impl TaskItem {
 #[derive(Default)]
 pub struct Worker {
     tasks: Arc<Mutex<TodoTasks>>,
+    tk_handles: Vec<tokio::task::JoinHandle<()>>,
 }
 
 #[derive(Default)]
@@ -44,17 +45,21 @@ struct TodoTasks {
     ready_queue: BinaryHeap<Reverse<TaskItem>>,
     time_wheel: BTreeMap<u64, LinkedList<TaskItem>>,
     in_wheel: HashSet<Vec<u8>>,
+    stop_flag: bool,
 }
 
 impl Worker {
-    pub fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let tasks = self.tasks.clone();
-        let forever = task::spawn(async move {
+        let handler = task::spawn(async move {
             let mut interval = time::interval(Duration::from_millis(5));
             loop {
                 interval.tick().await;
                 let now = utils::timestamp();
                 let mut tasks = tasks.lock().unwrap();
+                if tasks.stop_flag {
+                    break;
+                }
                 let window = (Excluded(0), Included(now));
                 let todo_list = tasks.time_wheel.range(window);
                 let mut near_slots = Vec::<u64>::with_capacity(10);
@@ -74,8 +79,8 @@ impl Worker {
                 }
             }
         });
-        //let _r = forever.await;
-        info!("worker start, {:?}", forever);
+        self.tk_handles.push(handler);
+        info!("worker start");
         Ok(())
     }
 
@@ -125,5 +130,13 @@ impl Worker {
             ready_size: tasks.ready_queue.len() as u64,
             delayed_size: tasks.in_wheel.len() as u64,
         }
+    }
+
+    pub async fn stop(&self) -> bool {
+        {
+            let mut tasks = self.tasks.lock().unwrap();
+            tasks.stop_flag = true;
+        }
+        return true;
     }
 }
