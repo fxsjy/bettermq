@@ -316,7 +316,7 @@ impl PriorityQueueSvc {
 
     pub async fn stop(&self) {
         let state = self.state.write().unwrap();
-        state.worker.stop();
+        state.worker.stop().await;
     }
 }
 
@@ -423,5 +423,6 @@ mod tests {
             }))
             .unwrap();
         assert_eq!(pops.get_ref().items.len(), 0);
+        service.stop().await;
     }
 }

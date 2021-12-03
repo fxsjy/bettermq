@@ -8,6 +8,7 @@ use std::ops::Bound::{Excluded, Included};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
+use tokio::sync::Notify;
 use tokio::{task, time};
 use tracing::info;
 
@@ -38,6 +39,7 @@ impl TaskItem {
 pub struct Worker {
     tasks: Arc<Mutex<TodoTasks>>,
     tk_handles: Vec<tokio::task::JoinHandle<()>>,
+    notifier: Arc<Notify>,
 }
 
 #[derive(Default)]
@@ -51,8 +53,11 @@ struct TodoTasks {
 impl Worker {
     pub fn start(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let tasks = self.tasks.clone();
+        self.notifier = Arc::new(Notify::new());
+        let notifier = self.notifier.clone();
         let handler = task::spawn(async move {
             let mut interval = time::interval(Duration::from_millis(5));
+            info!("worker start");
             loop {
                 interval.tick().await;
                 let now = utils::timestamp();
@@ -78,9 +83,10 @@ impl Worker {
                     }
                 }
             }
+            info!("worker stopped");
+            notifier.notify_one();
         });
         self.tk_handles.push(handler);
-        info!("worker start");
         Ok(())
     }
 
@@ -137,6 +143,7 @@ impl Worker {
             let mut tasks = self.tasks.lock().unwrap();
             tasks.stop_flag = true;
         }
+        self.notifier.notified().await;
         return true;
     }
 }
