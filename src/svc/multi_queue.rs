@@ -93,7 +93,7 @@ impl PriorityQueue for MultiQueueSvc {
     ) -> Result<Response<CreateTopicReply>, Status> {
         let mut topics_svc = self.topics_svc.write().unwrap();
         let topic_name = request.get_ref().topic.clone();
-        if topic_name.is_empty() {
+        if topic_name.is_empty() || topic_name.contains("_index") || topic_name.contains("_gc") {
             return Err(Status::invalid_argument("invalid topic name"));
         }
         let reply = CreateTopicReply {};
@@ -117,9 +117,9 @@ impl PriorityQueue for MultiQueueSvc {
         request: Request<RemoveTopicRequest>,
     ) -> Result<Response<RemoveTopicReply>, Status> {
         let svc: Option<PriorityQueueSvc>;
+        let topic_name = request.get_ref().topic.clone();
         {
             let mut topics_svc = self.topics_svc.write().unwrap();
-            let topic_name = request.get_ref().topic.clone();
             if topic_name.is_empty() {
                 return Err(Status::invalid_argument("invalid topic name"));
             }
@@ -128,6 +128,8 @@ impl PriorityQueue for MultiQueueSvc {
         match svc {
             Some(svc) => {
                 svc.stop().await;
+                let old_dir = format!("{}/{}", self.root_dir, topic_name);
+                let _result = fs::rename(&old_dir, format!("{}_gc", old_dir));
                 let reply = RemoveTopicReply {};
                 Ok(Response::new(reply))
             }
@@ -141,6 +143,9 @@ fn list_topics_from_dir(dir: &String) -> Vec<String> {
     for full_path in fs::read_dir(dir).unwrap() {
         let short_name: String = full_path.unwrap().file_name().to_str().unwrap().into();
         if short_name.ends_with("_index") {
+            continue;
+        }
+        if short_name.ends_with("_gc") {
             continue;
         }
         topics.push(short_name);
