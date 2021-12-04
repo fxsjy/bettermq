@@ -19,6 +19,8 @@ use tonic::{Request, Response, Status};
 #[derive(Default)]
 pub struct MultiQueueSvc {
     topics_svc: Arc<RwLock<HashMap<String, PriorityQueueSvc>>>,
+    root_dir: String,
+    node_id: String,
 }
 
 #[tonic::async_trait]
@@ -86,11 +88,27 @@ impl PriorityQueue for MultiQueueSvc {
 
     async fn create_topic(
         &self,
-        _request: Request<CreateTopicRequest>,
+        request: Request<CreateTopicRequest>,
     ) -> Result<Response<CreateTopicReply>, Status> {
-        let topics_svc = self.topics_svc.write().unwrap();
+        let mut topics_svc = self.topics_svc.write().unwrap();
+        let topic_name = request.get_ref().topic.clone();
+        if topic_name.is_empty() {
+            return Err(Status::invalid_argument("invalid topic name"));
+        }
         let reply = CreateTopicReply {};
-        Ok(Response::new(reply))
+        let svc = topics_svc.get(&topic_name);
+        match svc {
+            Some(_svc) => Err(Status::already_exists("topic exists")),
+            None => {
+                let sub_dir = format!("{:}/{:}", self.root_dir, topic_name);
+                let index_dir = format!("{:}_index", sub_dir);
+                let msg_store = kv::new_kvstore(DbKind::SLED, sub_dir).unwrap();
+                let index_store = kv::new_kvstore(DbKind::SLED, index_dir).unwrap();
+                let service = make_one_queue(msg_store, index_store, &self.node_id, &topic_name);
+                topics_svc.insert(topic_name, service);
+                Ok(Response::new(reply))
+            }
+        }
     }
 }
 
@@ -111,7 +129,9 @@ pub fn new(
     node_id: String,
     config_topics: Vec<String>,
 ) -> bettermq::priority_queue_server::PriorityQueueServer<MultiQueueSvc> {
-    let multi_queue = MultiQueueSvc::default();
+    let mut multi_queue = MultiQueueSvc::default();
+    multi_queue.root_dir = dir.clone();
+    multi_queue.node_id = node_id.clone();
     {
         let mut topic_svcs = multi_queue.topics_svc.write().unwrap();
         let mut all_topics: Vec<String> = config_topics.into_iter().collect();
