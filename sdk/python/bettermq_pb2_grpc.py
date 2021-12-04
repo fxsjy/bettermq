@@ -39,6 +39,16 @@ class PriorityQueueStub(object):
                 request_serializer=bettermq__pb2.GetActiveTopicsRequest.SerializeToString,
                 response_deserializer=bettermq__pb2.GetActiveTopicsReply.FromString,
                 )
+        self.CreateTopic = channel.unary_unary(
+                '/bettermq.PriorityQueue/CreateTopic',
+                request_serializer=bettermq__pb2.CreateTopicRequest.SerializeToString,
+                response_deserializer=bettermq__pb2.CreateTopicReply.FromString,
+                )
+        self.RemoveTopic = channel.unary_unary(
+                '/bettermq.PriorityQueue/RemoveTopic',
+                request_serializer=bettermq__pb2.RemoveTopicRequest.SerializeToString,
+                response_deserializer=bettermq__pb2.RemoveTopicReply.FromString,
+                )
 
 
 class PriorityQueueServicer(object):
@@ -74,6 +84,18 @@ class PriorityQueueServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def CreateTopic(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RemoveTopic(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_PriorityQueueServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -101,6 +123,16 @@ def add_PriorityQueueServicer_to_server(servicer, server):
                     servicer.GetActiveTopics,
                     request_deserializer=bettermq__pb2.GetActiveTopicsRequest.FromString,
                     response_serializer=bettermq__pb2.GetActiveTopicsReply.SerializeToString,
+            ),
+            'CreateTopic': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateTopic,
+                    request_deserializer=bettermq__pb2.CreateTopicRequest.FromString,
+                    response_serializer=bettermq__pb2.CreateTopicReply.SerializeToString,
+            ),
+            'RemoveTopic': grpc.unary_unary_rpc_method_handler(
+                    servicer.RemoveTopic,
+                    request_deserializer=bettermq__pb2.RemoveTopicRequest.FromString,
+                    response_serializer=bettermq__pb2.RemoveTopicReply.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -194,5 +226,39 @@ class PriorityQueue(object):
         return grpc.experimental.unary_unary(request, target, '/bettermq.PriorityQueue/GetActiveTopics',
             bettermq__pb2.GetActiveTopicsRequest.SerializeToString,
             bettermq__pb2.GetActiveTopicsReply.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def CreateTopic(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/bettermq.PriorityQueue/CreateTopic',
+            bettermq__pb2.CreateTopicRequest.SerializeToString,
+            bettermq__pb2.CreateTopicReply.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def RemoveTopic(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/bettermq.PriorityQueue/RemoveTopic',
+            bettermq__pb2.RemoveTopicRequest.SerializeToString,
+            bettermq__pb2.RemoveTopicReply.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

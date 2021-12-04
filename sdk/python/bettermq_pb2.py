@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0e\x62\x65ttermq.proto\x12\x08\x62\x65ttermq\"g\n\x0e\x45nqueueRequest\x12\r\n\x05topic\x18\x01 \x01(\t\x12\x0f\n\x07payload\x18\x02 \x01(\x0c\x12\x10\n\x08priority\x18\x03 \x01(\x05\x12\x15\n\rdeliver_after\x18\x04 \x01(\r\x12\x0c\n\x04meta\x18\x05 \x01(\t\"3\n\x0c\x45nqueueReply\x12\x12\n\nmessage_id\x18\x01 \x01(\t\x12\x0f\n\x07node_id\x18\x02 \x01(\t\"F\n\x0e\x44\x65queueRequest\x12\r\n\x05topic\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x05\x12\x16\n\x0elease_duration\x18\x03 \x01(\x05\"O\n\x08\x44\x61taItem\x12\x12\n\nmessage_id\x18\x01 \x01(\t\x12\x0c\n\x04meta\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\x0c\x12\x10\n\x08priority\x18\x04 \x01(\x05\"1\n\x0c\x44\x65queueReply\x12!\n\x05items\x18\x01 \x03(\x0b\x32\x12.bettermq.DataItem\"/\n\nAckRequest\x12\r\n\x05topic\x18\x01 \x01(\t\x12\x12\n\nmessage_id\x18\x02 \x01(\t\"\n\n\x08\x41\x63kReply\"U\n\x0bNackRequest\x12\r\n\x05topic\x18\x01 \x01(\t\x12\x12\n\nmessage_id\x18\x02 \x01(\t\x12\x0c\n\x04meta\x18\x03 \x01(\t\x12\x15\n\rdeliver_after\x18\x04 \x01(\r\"\x0b\n\tNackReply\"\x18\n\x16GetActiveTopicsRequest\"&\n\x14GetActiveTopicsReply\x12\x0e\n\x06topics\x18\x01 \x03(\t\"E\n\nInnerIndex\x12\x10\n\x08priority\x18\x01 \x01(\x05\x12\x11\n\ttimestamp\x18\x02 \x01(\x04\x12\x12\n\nmessage_id\x18\x03 \x01(\x0c\x32\xc3\x02\n\rPriorityQueue\x12;\n\x07\x45nqueue\x12\x18.bettermq.EnqueueRequest\x1a\x16.bettermq.EnqueueReply\x12;\n\x07\x44\x65queue\x12\x18.bettermq.DequeueRequest\x1a\x16.bettermq.DequeueReply\x12/\n\x03\x41\x63k\x12\x14.bettermq.AckRequest\x1a\x12.bettermq.AckReply\x12\x32\n\x04Nack\x12\x15.bettermq.NackRequest\x1a\x13.bettermq.NackReply\x12S\n\x0fGetActiveTopics\x12 .bettermq.GetActiveTopicsRequest\x1a\x1e.bettermq.GetActiveTopicsReplyb\x06proto3'
+  serialized_pb=b'\n\x0e\x62\x65ttermq.proto\x12\x08\x62\x65ttermq\"g\n\x0e\x45nqueueRequest\x12\r\n\x05topic\x18\x01 \x01(\t\x12\x0f\n\x07payload\x18\x02 \x01(\x0c\x12\x10\n\x08priority\x18\x03 \x01(\x05\x12\x15\n\rdeliver_after\x18\x04 \x01(\r\x12\x0c\n\x04meta\x18\x05 \x01(\t\"3\n\x0c\x45nqueueReply\x12\x12\n\nmessage_id\x18\x01 \x01(\t\x12\x0f\n\x07node_id\x18\x02 \x01(\t\"F\n\x0e\x44\x65queueRequest\x12\r\n\x05topic\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x05\x12\x16\n\x0elease_duration\x18\x03 \x01(\x05\"O\n\x08\x44\x61taItem\x12\x12\n\nmessage_id\x18\x01 \x01(\t\x12\x0c\n\x04meta\x18\x02 \x01(\t\x12\x0f\n\x07payload\x18\x03 \x01(\x0c\x12\x10\n\x08priority\x18\x04 \x01(\x05\"1\n\x0c\x44\x65queueReply\x12!\n\x05items\x18\x01 \x03(\x0b\x32\x12.bettermq.DataItem\"/\n\nAckRequest\x12\r\n\x05topic\x18\x01 \x01(\t\x12\x12\n\nmessage_id\x18\x02 \x01(\t\"\n\n\x08\x41\x63kReply\"U\n\x0bNackRequest\x12\r\n\x05topic\x18\x01 \x01(\t\x12\x12\n\nmessage_id\x18\x02 \x01(\t\x12\x0c\n\x04meta\x18\x03 \x01(\t\x12\x15\n\rdeliver_after\x18\x04 \x01(\r\"\x0b\n\tNackReply\"\x18\n\x16GetActiveTopicsRequest\"E\n\nTopicStats\x12\r\n\x05topic\x18\x01 \x01(\t\x12\x12\n\nready_size\x18\x02 \x01(\x04\x12\x14\n\x0c\x64\x65layed_size\x18\x03 \x01(\x04\"<\n\x14GetActiveTopicsReply\x12$\n\x06topics\x18\x01 \x03(\x0b\x32\x14.bettermq.TopicStats\"E\n\nInnerIndex\x12\x10\n\x08priority\x18\x01 \x01(\x05\x12\x11\n\ttimestamp\x18\x02 \x01(\x04\x12\x12\n\nmessage_id\x18\x03 \x01(\x0c\"#\n\x12\x43reateTopicRequest\x12\r\n\x05topic\x18\x01 \x01(\t\"\x12\n\x10\x43reateTopicReply\"#\n\x12RemoveTopicRequest\x12\r\n\x05topic\x18\x01 \x01(\t\"\x12\n\x10RemoveTopicReply2\xd5\x03\n\rPriorityQueue\x12;\n\x07\x45nqueue\x12\x18.bettermq.EnqueueRequest\x1a\x16.bettermq.EnqueueReply\x12;\n\x07\x44\x65queue\x12\x18.bettermq.DequeueRequest\x1a\x16.bettermq.DequeueReply\x12/\n\x03\x41\x63k\x12\x14.bettermq.AckRequest\x1a\x12.bettermq.AckReply\x12\x32\n\x04Nack\x12\x15.bettermq.NackRequest\x1a\x13.bettermq.NackReply\x12S\n\x0fGetActiveTopics\x12 .bettermq.GetActiveTopicsRequest\x1a\x1e.bettermq.GetActiveTopicsReply\x12G\n\x0b\x43reateTopic\x12\x1c.bettermq.CreateTopicRequest\x1a\x1a.bettermq.CreateTopicReply\x12G\n\x0bRemoveTopic\x12\x1c.bettermq.RemoveTopicRequest\x1a\x1a.bettermq.RemoveTopicReplyb\x06proto3'
 )
 
 
@@ -422,18 +422,32 @@ _GETACTIVETOPICSREQUEST = _descriptor.Descriptor(
 )
 
 
-_GETACTIVETOPICSREPLY = _descriptor.Descriptor(
-  name='GetActiveTopicsReply',
-  full_name='bettermq.GetActiveTopicsReply',
+_TOPICSTATS = _descriptor.Descriptor(
+  name='TopicStats',
+  full_name='bettermq.TopicStats',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='topics', full_name='bettermq.GetActiveTopicsReply.topics', index=0,
-      number=1, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
+      name='topic', full_name='bettermq.TopicStats.topic', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='ready_size', full_name='bettermq.TopicStats.ready_size', index=1,
+      number=2, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='delayed_size', full_name='bettermq.TopicStats.delayed_size', index=2,
+      number=3, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -450,7 +464,39 @@ _GETACTIVETOPICSREPLY = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=577,
-  serialized_end=615,
+  serialized_end=646,
+)
+
+
+_GETACTIVETOPICSREPLY = _descriptor.Descriptor(
+  name='GetActiveTopicsReply',
+  full_name='bettermq.GetActiveTopicsReply',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='topics', full_name='bettermq.GetActiveTopicsReply.topics', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=648,
+  serialized_end=708,
 )
 
 
@@ -495,11 +541,126 @@ _INNERINDEX = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=617,
-  serialized_end=686,
+  serialized_start=710,
+  serialized_end=779,
+)
+
+
+_CREATETOPICREQUEST = _descriptor.Descriptor(
+  name='CreateTopicRequest',
+  full_name='bettermq.CreateTopicRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='topic', full_name='bettermq.CreateTopicRequest.topic', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=781,
+  serialized_end=816,
+)
+
+
+_CREATETOPICREPLY = _descriptor.Descriptor(
+  name='CreateTopicReply',
+  full_name='bettermq.CreateTopicReply',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=818,
+  serialized_end=836,
+)
+
+
+_REMOVETOPICREQUEST = _descriptor.Descriptor(
+  name='RemoveTopicRequest',
+  full_name='bettermq.RemoveTopicRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='topic', full_name='bettermq.RemoveTopicRequest.topic', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=838,
+  serialized_end=873,
+)
+
+
+_REMOVETOPICREPLY = _descriptor.Descriptor(
+  name='RemoveTopicReply',
+  full_name='bettermq.RemoveTopicReply',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=875,
+  serialized_end=893,
 )
 
 _DEQUEUEREPLY.fields_by_name['items'].message_type = _DATAITEM
+_GETACTIVETOPICSREPLY.fields_by_name['topics'].message_type = _TOPICSTATS
 DESCRIPTOR.message_types_by_name['EnqueueRequest'] = _ENQUEUEREQUEST
 DESCRIPTOR.message_types_by_name['EnqueueReply'] = _ENQUEUEREPLY
 DESCRIPTOR.message_types_by_name['DequeueRequest'] = _DEQUEUEREQUEST
@@ -510,8 +671,13 @@ DESCRIPTOR.message_types_by_name['AckReply'] = _ACKREPLY
 DESCRIPTOR.message_types_by_name['NackRequest'] = _NACKREQUEST
 DESCRIPTOR.message_types_by_name['NackReply'] = _NACKREPLY
 DESCRIPTOR.message_types_by_name['GetActiveTopicsRequest'] = _GETACTIVETOPICSREQUEST
+DESCRIPTOR.message_types_by_name['TopicStats'] = _TOPICSTATS
 DESCRIPTOR.message_types_by_name['GetActiveTopicsReply'] = _GETACTIVETOPICSREPLY
 DESCRIPTOR.message_types_by_name['InnerIndex'] = _INNERINDEX
+DESCRIPTOR.message_types_by_name['CreateTopicRequest'] = _CREATETOPICREQUEST
+DESCRIPTOR.message_types_by_name['CreateTopicReply'] = _CREATETOPICREPLY
+DESCRIPTOR.message_types_by_name['RemoveTopicRequest'] = _REMOVETOPICREQUEST
+DESCRIPTOR.message_types_by_name['RemoveTopicReply'] = _REMOVETOPICREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 EnqueueRequest = _reflection.GeneratedProtocolMessageType('EnqueueRequest', (_message.Message,), {
@@ -584,6 +750,13 @@ GetActiveTopicsRequest = _reflection.GeneratedProtocolMessageType('GetActiveTopi
   })
 _sym_db.RegisterMessage(GetActiveTopicsRequest)
 
+TopicStats = _reflection.GeneratedProtocolMessageType('TopicStats', (_message.Message,), {
+  'DESCRIPTOR' : _TOPICSTATS,
+  '__module__' : 'bettermq_pb2'
+  # @@protoc_insertion_point(class_scope:bettermq.TopicStats)
+  })
+_sym_db.RegisterMessage(TopicStats)
+
 GetActiveTopicsReply = _reflection.GeneratedProtocolMessageType('GetActiveTopicsReply', (_message.Message,), {
   'DESCRIPTOR' : _GETACTIVETOPICSREPLY,
   '__module__' : 'bettermq_pb2'
@@ -598,6 +771,34 @@ InnerIndex = _reflection.GeneratedProtocolMessageType('InnerIndex', (_message.Me
   })
 _sym_db.RegisterMessage(InnerIndex)
 
+CreateTopicRequest = _reflection.GeneratedProtocolMessageType('CreateTopicRequest', (_message.Message,), {
+  'DESCRIPTOR' : _CREATETOPICREQUEST,
+  '__module__' : 'bettermq_pb2'
+  # @@protoc_insertion_point(class_scope:bettermq.CreateTopicRequest)
+  })
+_sym_db.RegisterMessage(CreateTopicRequest)
+
+CreateTopicReply = _reflection.GeneratedProtocolMessageType('CreateTopicReply', (_message.Message,), {
+  'DESCRIPTOR' : _CREATETOPICREPLY,
+  '__module__' : 'bettermq_pb2'
+  # @@protoc_insertion_point(class_scope:bettermq.CreateTopicReply)
+  })
+_sym_db.RegisterMessage(CreateTopicReply)
+
+RemoveTopicRequest = _reflection.GeneratedProtocolMessageType('RemoveTopicRequest', (_message.Message,), {
+  'DESCRIPTOR' : _REMOVETOPICREQUEST,
+  '__module__' : 'bettermq_pb2'
+  # @@protoc_insertion_point(class_scope:bettermq.RemoveTopicRequest)
+  })
+_sym_db.RegisterMessage(RemoveTopicRequest)
+
+RemoveTopicReply = _reflection.GeneratedProtocolMessageType('RemoveTopicReply', (_message.Message,), {
+  'DESCRIPTOR' : _REMOVETOPICREPLY,
+  '__module__' : 'bettermq_pb2'
+  # @@protoc_insertion_point(class_scope:bettermq.RemoveTopicReply)
+  })
+_sym_db.RegisterMessage(RemoveTopicReply)
+
 
 
 _PRIORITYQUEUE = _descriptor.ServiceDescriptor(
@@ -607,8 +808,8 @@ _PRIORITYQUEUE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=689,
-  serialized_end=1012,
+  serialized_start=896,
+  serialized_end=1365,
   methods=[
   _descriptor.MethodDescriptor(
     name='Enqueue',
@@ -657,6 +858,26 @@ _PRIORITYQUEUE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_GETACTIVETOPICSREQUEST,
     output_type=_GETACTIVETOPICSREPLY,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='CreateTopic',
+    full_name='bettermq.PriorityQueue.CreateTopic',
+    index=5,
+    containing_service=None,
+    input_type=_CREATETOPICREQUEST,
+    output_type=_CREATETOPICREPLY,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+  ),
+  _descriptor.MethodDescriptor(
+    name='RemoveTopic',
+    full_name='bettermq.PriorityQueue.RemoveTopic',
+    index=6,
+    containing_service=None,
+    input_type=_REMOVETOPICREQUEST,
+    output_type=_REMOVETOPICREPLY,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
