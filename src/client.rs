@@ -1,7 +1,7 @@
 use bettermq::priority_queue_client::PriorityQueueClient;
 use bettermq::{
     AckRequest, CreateTopicRequest, DequeueRequest, EnqueueRequest, GetActiveTopicsRequest,
-    NackRequest,
+    NackRequest, RemoveTopicRequest,
 };
 use clap::{App, Arg, ArgMatches, SubCommand};
 use std::fs;
@@ -159,6 +159,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ),
         )
         .subcommand(
+            SubCommand::with_name("remove")
+                .about("remove a topic")
+                .arg(
+                    Arg::with_name("topic")
+                        .short("t")
+                        .long("topic")
+                        .default_value("")
+                        .value_name("TOPIC"),
+                )
+                .arg(
+                    Arg::with_name("host")
+                        .short("h")
+                        .long("host")
+                        .default_value("http://127.0.0.1:8404")
+                        .value_name("HOST ADDRESS"),
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("nack")
                 .about("nack a message")
                 .arg(
@@ -216,6 +234,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         ("create", Some(subm)) => {
             run_create(subm).await?;
+        }
+        ("remove", Some(subm)) => {
+            run_remove(subm).await?;
         }
         _ => {
             return Ok(());
@@ -318,6 +339,16 @@ async fn run_create(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Err
         topic: opts.value_of("topic").unwrap().into(),
     });
     let response = client.create_topic(request).await?;
+    println!("{:?}", response);
+    Ok(())
+}
+
+async fn run_remove(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Error>> {
+    let mut client = make_conn(opts).await?;
+    let request = tonic::Request::new(RemoveTopicRequest {
+        topic: opts.value_of("topic").unwrap().into(),
+    });
+    let response = client.remove_topic(request).await?;
     println!("{:?}", response);
     Ok(())
 }

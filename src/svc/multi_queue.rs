@@ -7,6 +7,7 @@ use bettermq::priority_queue_server::PriorityQueue;
 use bettermq::{AckReply, AckRequest};
 use bettermq::{
     CreateTopicReply, CreateTopicRequest, GetActiveTopicsReply, GetActiveTopicsRequest,
+    RemoveTopicReply, RemoveTopicRequest,
 };
 use bettermq::{DequeueReply, DequeueRequest};
 use bettermq::{EnqueueReply, EnqueueRequest};
@@ -108,6 +109,29 @@ impl PriorityQueue for MultiQueueSvc {
                 topics_svc.insert(topic_name, service);
                 Ok(Response::new(reply))
             }
+        }
+    }
+
+    async fn remove_topic(
+        &self,
+        request: Request<RemoveTopicRequest>,
+    ) -> Result<Response<RemoveTopicReply>, Status> {
+        let svc: Option<PriorityQueueSvc>;
+        {
+            let mut topics_svc = self.topics_svc.write().unwrap();
+            let topic_name = request.get_ref().topic.clone();
+            if topic_name.is_empty() {
+                return Err(Status::invalid_argument("invalid topic name"));
+            }
+            svc = topics_svc.remove(&topic_name);
+        }
+        match svc {
+            Some(svc) => {
+                svc.stop().await;
+                let reply = RemoveTopicReply {};
+                Ok(Response::new(reply))
+            }
+            None => Err(Status::not_found("topic not found")),
         }
     }
 }

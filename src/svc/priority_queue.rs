@@ -18,7 +18,6 @@ pub mod bettermq {
 struct SharedState {
     msg_store: Box<dyn KvStore>,
     index_store: Box<dyn KvStore>,
-    worker: Worker,
     seq_no: u64,
 }
 
@@ -26,6 +25,7 @@ pub struct PriorityQueueSvc {
     state: Arc<RwLock<SharedState>>,
     node_id: String,
     topic: String,
+    worker: Box<Worker>,
 }
 
 pub fn make_one_queue(
@@ -48,13 +48,13 @@ pub fn make_one_queue(
     rebuild_index(&index_store, &worker);
     let service = PriorityQueueSvc {
         state: Arc::new(RwLock::new(SharedState {
-            worker: worker,
             msg_store: msg_store,
             index_store: index_store,
             seq_no: seq_no,
         })),
         node_id: node_id.clone(),
         topic: topic.clone(),
+        worker: Box::new(worker),
     };
     info!("seq_no: {:?}", seq_no);
     service
@@ -146,10 +146,7 @@ impl PriorityQueueSvc {
                 }
             }
         }
-        {
-            let state = self.state.write().unwrap();
-            state.worker.add_task(task_item);
-        }
+        self.worker.add_task(task_item);
         let reply = EnqueueReply {
             message_id: format!("{:}", cur_seq),
             node_id: self.node_id.clone(),
@@ -163,17 +160,15 @@ impl PriorityQueueSvc {
     ) -> Result<Response<DequeueReply>, Status> {
         trace!("{:?}", request);
         let task_items: Vec<TaskItem>;
-        {
-            let state = self.state.write().unwrap();
-            task_items = state.worker.fetch_tasks(request.get_ref().count as u32);
-            if request.get_ref().lease_duration > 0 {
-                let retry_after = request.get_ref().lease_duration;
-                for task in &task_items {
-                    let retry_task = task.delayed_copy(retry_after);
-                    state.worker.add_task(retry_task);
-                }
+        task_items = self.worker.fetch_tasks(request.get_ref().count as u32);
+        if request.get_ref().lease_duration > 0 {
+            let retry_after = request.get_ref().lease_duration;
+            for task in &task_items {
+                let retry_task = task.delayed_copy(retry_after);
+                self.worker.add_task(retry_task);
             }
         }
+
         let reply_items = self.fill_payload(task_items);
         if request.get_ref().lease_duration <= 0 {
             for item in &reply_items {
@@ -210,8 +205,7 @@ impl PriorityQueueSvc {
     }
 
     pub fn get_stats(&self) -> TopicStats {
-        let state = self.state.read().unwrap();
-        let stats = state.worker.stats();
+        let stats = self.worker.stats();
         let stats = TopicStats {
             topic: self.topic.clone(),
             ready_size: stats.ready_size,
@@ -223,11 +217,8 @@ impl PriorityQueueSvc {
     pub fn ack(&self, request: Request<AckRequest>) -> Result<Response<AckReply>, Status> {
         trace!("{:?}", request);
         let message_id = utils::msgid_to_raw(&request.get_ref().message_id);
-        {
-            let state = self.state.write().unwrap();
-            if !state.worker.cancel_task(&message_id) {
-                return Err(Status::not_found("no lease found"));
-            }
+        if !self.worker.cancel_task(&message_id) {
+            return Err(Status::not_found("no lease found"));
         }
         {
             let state = self.state.read().unwrap();
@@ -242,10 +233,7 @@ impl PriorityQueueSvc {
     pub fn nack(&self, request: Request<NackRequest>) -> Result<Response<NackReply>, Status> {
         trace!("{:?}", request);
         let message_id = utils::msgid_to_raw(&request.get_ref().message_id);
-        {
-            let state = self.state.write().unwrap();
-            let _canceled = state.worker.cancel_task(&message_id);
-        }
+        let _canceled = self.worker.cancel_task(&message_id);
         let old_payload: Vec<u8>;
         let old_priority: i32;
         let old_meta: String;
@@ -315,8 +303,7 @@ impl PriorityQueueSvc {
     }
 
     pub async fn stop(&self) {
-        let state = self.state.write().unwrap();
-        state.worker.stop().await;
+        self.worker.stop().await;
     }
 }
 
