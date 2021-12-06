@@ -4,13 +4,15 @@ from bettermq_pb2_grpc import *
 
 host = '127.0.0.1:8404'
 
+data = open('/bin/ls', 'rb').read()
+
 with grpc.insecure_channel(host) as channel:
     client = PriorityQueueStub(channel)
-    for i in range(1,101):
+    for i in range(1,100001):
         req = EnqueueRequest(
             topic = "root",
             meta = "k" + str(i),
-            payload = b'x' * 1024,
+            payload = data,
             priority = i % 5
         )
         rsps = client.Enqueue(req)

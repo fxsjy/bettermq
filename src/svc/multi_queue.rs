@@ -103,8 +103,8 @@ impl PriorityQueue for MultiQueueSvc {
             None => {
                 let sub_dir = format!("{:}/{:}", self.root_dir, topic_name);
                 let index_dir = format!("{:}_index", sub_dir);
-                let msg_store = kv::new_kvstore(DbKind::SLED, sub_dir).unwrap();
-                let index_store = kv::new_kvstore(DbKind::SLED, index_dir).unwrap();
+                let msg_store = kv::new_kvstore(DbKind::ROCKSDB, sub_dir).unwrap();
+                let index_store = kv::new_kvstore(DbKind::ROCKSDB, index_dir).unwrap();
                 let service = make_one_queue(msg_store, index_store, &self.node_id, &topic_name);
                 topics_svc.insert(topic_name, service);
                 Ok(Response::new(reply))
@@ -140,7 +140,11 @@ impl PriorityQueue for MultiQueueSvc {
 
 fn list_topics_from_dir(dir: &String) -> Vec<String> {
     let mut topics = Vec::<String>::new();
-    for full_path in fs::read_dir(dir).unwrap() {
+    let dirs = fs::read_dir(dir);
+    if dirs.is_err() {
+        return topics;
+    }
+    for full_path in dirs.unwrap() {
         let short_name: String = full_path.unwrap().file_name().to_str().unwrap().into();
         if short_name.ends_with("_index") {
             continue;
@@ -173,8 +177,8 @@ pub fn new(
         for topic_name in all_topics {
             let sub_dir = format!("{:}/{:}", dir, topic_name);
             let index_dir = format!("{:}_index", sub_dir);
-            let msg_store = kv::new_kvstore(DbKind::SLED, sub_dir).unwrap();
-            let index_store = kv::new_kvstore(DbKind::SLED, index_dir).unwrap();
+            let msg_store = kv::new_kvstore(DbKind::ROCKSDB, sub_dir).unwrap();
+            let index_store = kv::new_kvstore(DbKind::ROCKSDB, index_dir).unwrap();
             let service = make_one_queue(msg_store, index_store, &node_id, &topic_name);
             topic_svcs.insert(topic_name, service);
         }

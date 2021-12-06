@@ -1,23 +1,21 @@
+use std::cmp::Ordering;
 use strum_macros::Display;
 use tracing::info;
 
 pub enum DbKind {
     SLED,
-    LEVELDB,
+    ROCKSDB,
 }
 
 #[derive(Debug, Display)]
 pub enum KvError {
     NotFound(String),
     IoError(String),
-    Unknown(&'static str),
 }
 
 pub trait KvStore: Send + Sync + 'static {
     fn get(&self, key: &Vec<u8>) -> Result<Vec<u8>, KvError>;
     fn set(&self, key: &Vec<u8>, value: Vec<u8>) -> Result<(), KvError>;
-    fn min_key(&self) -> Result<Vec<u8>, KvError>;
-    fn max_key(&self) -> Result<Vec<u8>, KvError>;
     fn scan(
         &self,
         start: &Vec<u8>,
@@ -26,11 +24,17 @@ pub trait KvStore: Send + Sync + 'static {
         items: &mut Vec<(Vec<u8>, Vec<u8>)>,
     ) -> Result<(), KvError>;
     fn remove(&self, key: &Vec<u8>) -> Result<(), KvError>;
+    fn max_key(&self) -> Result<Vec<u8>, KvError>;
 }
 
 #[derive(Debug)]
 struct SledKv {
     db: sled::Db,
+}
+
+#[derive(Debug)]
+struct RocksDBKv {
+    db: rocksdb::DBWithThreadMode<rocksdb::MultiThreaded>,
 }
 
 pub fn new_kvstore(dbkind: DbKind, dir: String) -> Result<Box<dyn KvStore>, KvError> {
@@ -46,7 +50,19 @@ pub fn new_kvstore(dbkind: DbKind, dir: String) -> Result<Box<dyn KvStore>, KvEr
                 Err(err) => Err(KvError::IoError(err.to_string())),
             }
         }
-        DbKind::LEVELDB => Err(KvError::Unknown("unimplemented db, on todo list".into())),
+        DbKind::ROCKSDB => {
+            info!("open db (leveldb) {:}", dir);
+            let mut opts = rocksdb::Options::default();
+            opts.create_if_missing(true);
+            let db = rocksdb::DBWithThreadMode::<rocksdb::MultiThreaded>::open(&opts, dir);
+            match db {
+                Ok(db) => {
+                    let kvs = Box::new(RocksDBKv { db: db });
+                    Ok(kvs)
+                }
+                Err(err) => Err(KvError::IoError(err.to_string())),
+            }
+        }
     }
 }
 
@@ -95,13 +111,10 @@ impl KvStore for SledKv {
         Ok(())
     }
 
-    fn min_key(&self) -> Result<Vec<u8>, KvError> {
-        let first = self.db.first();
-        match first {
-            Ok(first) => match first {
-                Some((key, _)) => Ok(key.to_vec()),
-                None => Err(KvError::NotFound("not found min key".into())),
-            },
+    fn remove(&self, key: &Vec<u8>) -> Result<(), KvError> {
+        let r = self.db.remove(key);
+        match r {
+            Ok(_) => Ok(()),
             Err(err) => Err(KvError::IoError(err.to_string())),
         }
     }
@@ -116,13 +129,69 @@ impl KvStore for SledKv {
             Err(err) => Err(KvError::IoError(err.to_string())),
         }
     }
+}
 
-    fn remove(&self, key: &Vec<u8>) -> Result<(), KvError> {
-        let r = self.db.remove(key);
+impl KvStore for RocksDBKv {
+    fn get(&self, key: &Vec<u8>) -> Result<Vec<u8>, KvError> {
+        match self.db.get(key.as_slice()) {
+            Ok(value) => match value {
+                Some(value) => Ok(value.to_vec()),
+                None => Err(KvError::NotFound("key not found".into())),
+            },
+            Err(err) => Err(KvError::IoError(err.to_string())),
+        }
+    }
+    fn set(&self, key: &Vec<u8>, value: Vec<u8>) -> Result<(), KvError> {
+        let r = self.db.put(key, value);
         match r {
             Ok(_) => Ok(()),
             Err(err) => Err(KvError::IoError(err.to_string())),
         }
+    }
+
+    fn scan(
+        &self,
+        start: &Vec<u8>,
+        end: &Vec<u8>,
+        limit: u32,
+        items: &mut Vec<(Vec<u8>, Vec<u8>)>,
+    ) -> Result<(), KvError> {
+        let start = start.as_slice();
+        let end = end.as_slice();
+        let mut ct = 0 as u32;
+        let it = self.db.iterator(rocksdb::IteratorMode::From(
+            start,
+            rocksdb::Direction::Forward,
+        ));
+        for (k, v) in it {
+            let k = k.as_ref();
+            let v = v.as_ref();
+            if k.cmp(end) != Ordering::Less {
+                break;
+            }
+            ct += 1;
+            if ct > limit {
+                break;
+            }
+            items.push((k.to_vec(), v.to_vec()));
+        }
+        Ok(())
+    }
+
+    fn remove(&self, key: &Vec<u8>) -> Result<(), KvError> {
+        let r = self.db.delete(key.as_slice());
+        match r {
+            Ok(_) => Ok(()),
+            Err(err) => Err(KvError::IoError(err.to_string())),
+        }
+    }
+
+    fn max_key(&self) -> Result<Vec<u8>, KvError> {
+        let it = self.db.iterator(rocksdb::IteratorMode::End);
+        for (k, _v) in it {
+            return Ok(k.as_ref().to_vec());
+        }
+        Err(KvError::NotFound("not found max key".into()))
     }
 }
 
@@ -142,13 +211,10 @@ impl KvStore for Box<dyn KvStore> {
     ) -> Result<(), KvError> {
         self.as_ref().scan(start, end, limit, items)
     }
-    fn min_key(&self) -> Result<Vec<u8>, KvError> {
-        self.as_ref().min_key()
+    fn remove(&self, key: &Vec<u8>) -> Result<(), KvError> {
+        self.as_ref().remove(key)
     }
     fn max_key(&self) -> Result<Vec<u8>, KvError> {
         self.as_ref().max_key()
-    }
-    fn remove(&self, key: &Vec<u8>) -> Result<(), KvError> {
-        self.as_ref().remove(key)
     }
 }
