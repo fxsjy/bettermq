@@ -7,6 +7,7 @@ use bettermq::{DataItem, DequeueReply, DequeueRequest};
 use bettermq::{EnqueueReply, EnqueueRequest, InnerIndex};
 use bettermq::{NackReply, NackRequest};
 use prost::Message;
+use rayon::prelude::*;
 use std::sync::{Arc, RwLock};
 use tonic::{Request, Response, Status};
 use tracing::{info, trace};
@@ -183,7 +184,7 @@ impl PriorityQueueSvc {
     fn fill_payload(&self, task_items: Vec<TaskItem>) -> Vec<DataItem> {
         let state = self.state.read().unwrap();
         let reply_items: Vec<DataItem> = task_items
-            .iter()
+            .par_iter()
             .filter_map(|ti| {
                 let value_buf = state.msg_store.get(&ti.message_id);
                 match value_buf {

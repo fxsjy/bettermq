@@ -250,7 +250,7 @@ async fn run_enqueue(opts: &ArgMatches<'_>) -> Result<(), Box<dyn std::error::Er
     let mut payload = opts.value_of("payload").unwrap().as_bytes().to_vec();
     if opts.occurrences_of("file") > 0 {
         let file_name = opts.value_of("file").unwrap();
-        payload = fs::read_to_string(file_name)?.as_bytes().to_vec();
+        payload = fs::read(file_name)?;
     }
     let mut n = 1;
     if opts.occurrences_of("benchmark") > 0 {
