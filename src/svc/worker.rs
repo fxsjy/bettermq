@@ -47,6 +47,7 @@ struct TodoTasks {
     ready_queue: BinaryHeap<Reverse<TaskItem>>,
     time_wheel: BTreeMap<u64, LinkedList<TaskItem>>,
     in_wheel: HashSet<Vec<u8>>,
+    in_ready: HashSet<Vec<u8>>,
     stop_flag: bool,
 }
 
@@ -77,6 +78,7 @@ impl Worker {
                         if tasks.in_wheel.contains(&item.message_id) {
                             {
                                 tasks.in_wheel.remove(&item.message_id);
+                                tasks.in_ready.insert(item.message_id.clone());
                             }
                             tasks.ready_queue.push(Reverse(item));
                         }
@@ -94,11 +96,17 @@ impl Worker {
         let now = utils::timestamp();
         let mut tasks = self.tasks.lock().unwrap();
         if item.timestamp <= now {
+            if tasks.in_ready.contains(&item.message_id) {
+                return;
+            }
+            tasks.in_ready.insert(item.message_id.clone());
             tasks.ready_queue.push(Reverse(item));
         } else {
-            {
-                tasks.in_wheel.insert(item.message_id.clone());
+            if tasks.in_wheel.contains(&item.message_id) {
+                return;
             }
+            tasks.in_ready.remove(&item.message_id);
+            tasks.in_wheel.insert(item.message_id.clone());
             let ls = tasks
                 .time_wheel
                 .entry(item.timestamp)
@@ -110,10 +118,16 @@ impl Worker {
     pub fn fetch_tasks(&self, count: u32) -> Vec<TaskItem> {
         let mut tasks = self.tasks.lock().unwrap();
         let mut items = Vec::<TaskItem>::with_capacity(100);
-        for _i in 0..count {
+        let mut ct = 0;
+        while ct < count {
             match tasks.ready_queue.pop() {
                 Some(Reverse(top)) => {
+                    if !tasks.in_ready.contains(&top.message_id) {
+                        continue;
+                    }
+                    tasks.in_ready.remove(&top.message_id);
                     items.push(top);
+                    ct += 1;
                 }
                 None => break,
             }
