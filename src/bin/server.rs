@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .get_matches();
     let cfg = Config::new(opts.value_of("config").unwrap())?;
     tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
+        .with_max_level(cfg.log_level.parse::<tracing::Level>().unwrap())
         .init();
     let addr = cfg.listen_grpc.parse()?;
     let root_dir = cfg.data_dir.clone();
